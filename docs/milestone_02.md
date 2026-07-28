@@ -6,8 +6,7 @@ Create a professional, publication-quality EDA notebook to understand the APTOS 
 
 ## Files Created
 
-- `notebooks/01_EDA_APTOS.ipynb` — Complete EDA notebook
-- `notebooks/02_EDA_APTOS_Research.ipynb` — Extended, research-paper-style EDA (16 sections: integrity, class distribution, resolution/quality/color-space analysis, visual and lesion-level exploration, statistical hypothesis testing, outlier/near-duplicate/leakage audits, clinical interpretation, and research insights). Each section explains its scientific rationale, presents visualizations, interprets them, and states its implications for later milestones (preprocessing, augmentation, loss function, sampling, evaluation, explainability).
+- `notebooks/EDA_APTOS_Research.ipynb` — Publication-quality EDA notebook (16 sections: integrity, class distribution, resolution/quality/color-space analysis, visual and lesion-level exploration, statistical hypothesis testing, outlier/near-duplicate/leakage audits, clinical interpretation, and research insights). Each section explains its scientific rationale, presents visualizations, interprets them, and states its implications for later milestones (preprocessing, augmentation, loss function, sampling, evaluation, explainability).
 
 ## Execution Instructions
 
@@ -18,15 +17,15 @@ Create a professional, publication-quality EDA notebook to understand the APTOS 
 
 2. Launch Jupyter and run the notebook:
    ```powershell
-   jupyter notebook notebooks/01_EDA_APTOS.ipynb
+   jupyter notebook notebooks/EDA_APTOS_Research.ipynb
    ```
 
 3. Run all cells from top to bottom (Cell → Run All). No manual edits are required.
 
 **Prerequisites:**
-- Raw images must be present in `data/raw/{train_images,val_images,test_images}/`
-- Split CSVs must be present in `data/splits/` (`train_1.csv`, `valid.csv`, `test.csv`)
-- Required packages: `pandas`, `numpy`, `matplotlib`, `seaborn`, `Pillow`, `tqdm`
+- Raw images must be present in `data/raw/{train,val,test}/`
+- Split CSVs must be present in `data/splits/` (`train.csv`, `valid.csv`, `test.csv`)
+- Required packages: `pandas`, `numpy`, `matplotlib`, `seaborn`, `Pillow`, `tqdm`, `scipy`
 
 ## Validation Checklist
 

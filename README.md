@@ -14,7 +14,7 @@ RetinaGrade/
 │   ├── processed/           # Preprocessed/cached data (not committed)
 │   └── splits/              # Train/validation/test CSV splits
 ├── notebooks/
-│   └── 01_EDA_APTOS.ipynb   # Exploratory data analysis
+│   └── EDA_APTOS_Research.ipynb   # Publication-quality EDA with inline visualizations
 ├── src/
 │   ├── data/                # dataset.py, preprocessing.py, dataloader.py
 │   ├── models/              # swin_backbone.py, spm.py, plka.py, dual_head.py, dual_swinord.py
@@ -42,6 +42,7 @@ RetinaGrade/
 ## Milestones
 
 - [x] Repository scaffold and project organization
+- [x] Exploratory Data Analysis (`notebooks/EDA_APTOS_Research.ipynb`)
 - [ ] Data ingestion, preprocessing, and train/val/test split creation
 - [ ] Swin Transformer backbone with SPM and PLKA
 - [ ] Dual-head (classification + ordinal) architecture
@@ -52,54 +53,65 @@ RetinaGrade/
 
 ## Environment setup
 
-1. Create and activate a Python 3.11 virtual environment.
+### Conda (recommended)
 
-   **Windows PowerShell:**
-   ```powershell
-   python -m venv .venv
-   .venv\Scripts\Activate.ps1
-   ```
+```powershell
+conda env create -f environment.yml
+conda activate dual-swinord
+```
 
-   **Linux/macOS:**
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate
-   ```
+### venv
 
-2. Install the project in editable mode with development dependencies:
+**Windows PowerShell:**
+```powershell
+python -m venv .venv-gpu
+.venv-gpu\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -e ".[dev]"
+```
 
-   ```bash
-   python -m pip install --upgrade pip
-   pip install -e ".[dev]"
-   ```
+**Linux/macOS:**
+```bash
+python -m venv .venv-gpu
+source .venv-gpu/bin/activate
+python -m pip install --upgrade pip
+pip install -e ".[dev]"
+```
 
-3. Verify the skeleton runs without errors:
+### Verify installation
 
-   ```bash
-   python scripts/train.py
-   python scripts/evaluate.py
-   pytest
-   ```
+Run the test suite to confirm the package and dependencies are installed correctly:
 
-   Each script currently raises `NotImplementedError`; the point is to confirm that imports resolve and the package is installed.
+```bash
+pytest
+```
+
+> Note: `scripts/train.py`, `scripts/evaluate.py`, `scripts/predict.py`, and `scripts/explain.py` are still skeletons; running them directly will raise `NotImplementedError` until their implementations are added in later milestones.
 
 ## Data setup
 
-Place the APTOS 2019 data under `data/raw/`:
+Place the APTOS 2019 images under `data/raw/`:
 
 ```text
 data/raw/
-├── train_images/
+├── train/
 │   └── <id_code>.png
-├── test_images/
+├── val/
 │   └── <id_code>.png
-└── val_images/
+└── test/
     └── <id_code>.png
 ```
 
-Split CSVs belong in `data/splits/` (for example `train.csv`, `valid.csv`, `test.csv`).
+Split CSVs belong in `data/splits/` as `train.csv`, `valid.csv`, and `test.csv`.
+The expected columns follow the candidates in `configs/data.yaml` (for example `id_code` and `diagnosis`).
 
 Raw images and CSVs are **not** committed to Git (see `.gitignore`).
+
+## Git and large-file notes
+
+- `notebooks/EDA_APTOS_Research.ipynb` is ~22 MB because it stores inline visualizations. GitHub allows files up to 100 MB, but pushes and clones of this repository will be noticeably slower because of that notebook.
+- `docs/literature/*.pdf` is intentionally ignored by `.gitignore`; keep the paper locally or reference its DOI/URL in `docs/milestone_02.md`.
+- Data and generated artifacts (`data/raw/`, `data/processed/`, `outputs/`, `checkpoints/`, `logs/`) are not committed; only `.gitkeep` files are pushed so the directory structure is preserved when the project is cloned.
 
 ## Reproducibility and safety notes
 
