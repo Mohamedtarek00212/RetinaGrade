@@ -1,0 +1,38 @@
+# Data configuration — RetinaGrade / Dual-SwinOrd
+# Paths, splits, and label metadata for the APTOS-style DR grading dataset.
+
+paths:
+  base_dir: "data"
+  raw_dir: "data/raw"
+  splits_dir: "data/splits"
+  processed_dir: "data/processed"
+
+splits:
+  train:
+    csv: "data/splits/train.csv"
+    image_dir: "data/raw/train"
+  val:
+    csv: "data/splits/valid.csv"
+    image_dir: "data/raw/val"
+  test:
+    csv: "data/splits/test.csv"
+    image_dir: "data/raw/test"
+
+image:
+  extension: ".png"
+
+columns:
+  id_candidates: ["id_code", "image_id", "filename", "image", "id"]
+  label_candidates: ["diagnosis", "target", "label", "grade"]
+
+classes:
+  num_classes: 5
+  order: [0, 1, 2, 3, 4]
+  names:
+    0: "No DR (Normal)"
+    1: "Mild DR"
+    2: "Moderate DR"
+    3: "Severe DR"
+    4: "Proliferative DR (PDR)"
+
+seed: 42

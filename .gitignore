@@ -1,0 +1,50 @@
+# Python environments and caches
+.venv/
+.venv-gpu/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.env
+.idea/
+.vscode/
+
+# Data and generated artifacts
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/splits/*.csv
+docs/literature/*.pdf
+outputs/*
+!outputs/.gitkeep
+checkpoints/*
+!checkpoints/.gitkeep
+logs/*
+!logs/.gitkeep
+
+# Pre-reorganization archive (kept for reference; remove when no longer needed)
+legacy/
+
+# Build artifacts
+*.egg-info/
+build/
+dist/
+
+# Model weights
+*.pt
+*.pth
+*.ckpt
+
+# IDE / agent / temp files
+.qodo/
+.agents/
+.ipynb_checkpoints/
+*.docx
+.DS_Store
+Thumbs.db
