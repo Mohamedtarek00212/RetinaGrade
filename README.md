@@ -131,7 +131,8 @@ Raw images and CSVs are **not** committed to Git (see `.gitignore`).
 ## Model checkpoint
 
 The deployment checkpoint is `outputs/checkpoints/training/best.pt`. It is not
-stored in Git because it is approximately 523 MB. Copy or download it separately
+stored in Git because it is approximately 523 MB. Download it from the
+[v0.1.0 model release](https://github.com/Mohamedtarek00212/RetinaGrade/releases/download/v0.1.0/best.pt)
 and place it at the same path after cloning the repository.
 
 Checkpoint integrity:
