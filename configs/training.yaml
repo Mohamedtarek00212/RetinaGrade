@@ -1,0 +1,62 @@
+# Dual-SwinOrd training configuration.
+#
+# STATUS: runnable defaults. `epochs`, `optimizer.{name,lr,weight_decay}`,
+# `scheduler.name`, and `loss.lambda_cls` are paper-confirmed -- see
+# docs/milestone_04_paper_gaps.md, "What is explicitly supported" table,
+# Milestone 05 rows (Eq. 7, Eq. 8, Eq. 9, Section 4). Open Paper Gap fields
+# (PG-17 through PG-20) now contain implementation assumptions marked explicitly
+# as "Implementation assumption (not explicitly specified in the paper)".
+
+epochs: 50   # paper-confirmed (Section 4: "maximum epochs = 50")
+
+reproducibility:
+  seed: 42
+  deterministic: true
+
+optimizer:
+  name: "adamw"          # paper-confirmed (Section 4)
+  lr: 0.0001             # paper-confirmed (Section 4: "learning rate = 1e-4")
+  weight_decay: 0.0001   # paper-confirmed (Section 4: "weight decay = 1e-4")
+  # betas / eps intentionally omitted -> torch.optim.AdamW's own library
+  # defaults apply (0.9, 0.999, 1e-8); a PyTorch default, not a paper claim.
+  no_decay_patterns: ["bias", "norm"]   # standard AdamW practice, not a paper claim
+  frozen_patterns: []
+  # layerwise_lr_decay:   # PG-19 -- never mentioned by the paper; leave unset (None) to disable
+
+scheduler:
+  name: "cosine_annealing"   # paper-confirmed (Section 4)
+  # t_max:                    # PG-18 -- defaults to `epochs` above if left unset
+  eta_min: 0.0                  # Implementation assumption (not explicitly specified in the paper): standard PyTorch CosineAnnealingLR default lower bound
+
+loss:
+  label_smoothing: 0.1        # Implementation assumption (not explicitly specified in the paper): standard label smoothing for cross-entropy stability
+  lambda_cls: 0.5              # paper-confirmed (Eq. 9: "we set lambda = 0.5")
+  class_weight_strategy: null   # Eq. 7 shows no weight term; opt-in only --
+                                  #   see src/data/statistics.py::compute_class_weights
+  carm_pos_weight_enabled: false   # PG-17 -- disabled; CARM's cost term is
+                                     #   unconfirmed beyond Eq. 8's plain BCE
+
+amp:
+  enabled: true    # enabled for final run to improve throughput/VRAM on RTX 2000 Ada
+
+gradient:
+  accumulation_steps: 1
+  clip_norm: null   # not mentioned by the paper; opt-in engineering feature
+
+checkpoint:
+  dir: "outputs/checkpoints/training"
+  monitor_metric: "val_qwk"   # the paper's own headline metric
+  monitor_mode: "max"
+  save_last: true
+
+early_stopping:
+  enabled: false   # the paper trains a fixed 50-epoch budget; opt-in only
+  patience: 10
+  monitor_metric: "val_qwk"
+  mode: "max"
+
+logging:
+  log_dir: "outputs/logs/training"
+  csv_filename: "epoch_log.csv"
+  tensorboard_enabled: true   # tensorboard is now a pinned dependency
+  progress_bar: true

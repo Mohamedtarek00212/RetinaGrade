@@ -1,0 +1,84 @@
+{
+  "best_checkpoint": "D:\\RetinaGrade\\outputs\\checkpoints\\training\\best.pt",
+  "last_checkpoint": "D:\\RetinaGrade\\outputs\\checkpoints\\training\\last.pt",
+  "best_epoch": 24,
+  "best_metrics": {
+    "train_loss": 0.33409763699141165,
+    "train_classification_loss": 0.58812566255701,
+    "train_ordinal_loss": 0.08006961081277474,
+    "lr": 5.3139525976465657e-05,
+    "val_loss": 0.43645395095958267,
+    "val_qwk": 0.9177398382894351,
+    "val_accuracy": 0.8517441860465116,
+    "val_macro_f1": 0.6959067201430229,
+    "val_mae": 0.18604651162790697,
+    "val_within_one_accuracy": 0.9709302325581395,
+    "per_class_precision": {
+      "No DR (Normal)": 0.9941860465116279,
+      "Mild DR": 0.72,
+      "Moderate DR": 0.78,
+      "Severe DR": 0.3888888888888889,
+      "Proliferative DR (PDR)": 0.6551724137931034
+    },
+    "per_class_recall": {
+      "No DR (Normal)": 0.9941860465116279,
+      "Mild DR": 0.5294117647058824,
+      "Moderate DR": 0.8478260869565217,
+      "Severe DR": 0.3333333333333333,
+      "Proliferative DR (PDR)": 0.76
+    },
+    "per_class_f1": {
+      "No DR (Normal)": 0.9941860465116279,
+      "Mild DR": 0.6101694915254238,
+      "Moderate DR": 0.8125,
+      "Severe DR": 0.358974358974359,
+      "Proliferative DR (PDR)": 0.7037037037037037
+    }
+  },
+  "validation_ece": 0.0524152096274287,
+  "confusion_matrix": [
+    [
+      171,
+      1,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      18,
+      13,
+      2,
+      1
+    ],
+    [
+      1,
+      4,
+      78,
+      6,
+      3
+    ],
+    [
+      0,
+      0,
+      8,
+      7,
+      6
+    ],
+    [
+      0,
+      2,
+      1,
+      3,
+      19
+    ]
+  ],
+  "artefacts": {
+    "best_metrics": "outputs\\final_report\\best_metrics.json",
+    "learning_curves": "outputs\\final_report\\learning_curves.json",
+    "run_manifest": "outputs\\final_report\\run_manifest.json",
+    "confusion_matrix_csv": "outputs\\final_report\\confusion_matrix.csv",
+    "confusion_matrix_plot": "outputs\\final_report\\confusion_matrix.png",
+    "reliability_diagram": "outputs\\final_report\\reliability_diagram.png"
+  }
+}

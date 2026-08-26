@@ -1,0 +1,221 @@
+{
+  "stage": "audit",
+  "generated_at_utc": "2026-08-01T06:45:01.264485+00:00",
+  "duration_seconds": 245.73,
+  "config_hash": "0271bba4d24a",
+  "profile": "eda_driven",
+  "dataset": "aptos2019",
+  "totals": {
+    "images": 3662,
+    "readable": 3662,
+    "missing_files": 0,
+    "zero_byte_files": 0,
+    "unreadable_files": 0,
+    "total_bytes": 8603064803
+  },
+  "per_split": {
+    "test": {
+      "images": 366,
+      "readable": 366,
+      "missing_files": 0
+    },
+    "train": {
+      "images": 2930,
+      "readable": 2930,
+      "missing_files": 0
+    },
+    "val": {
+      "images": 366,
+      "readable": 366,
+      "missing_files": 0
+    }
+  },
+  "labels": {
+    "missing": 0,
+    "out_of_range": 0,
+    "duplicate_id_codes_per_split": {
+      "test": 0,
+      "train": 0,
+      "val": 0
+    },
+    "class_counts": {
+      "test": {
+        "0": 199,
+        "2": 87,
+        "4": 33,
+        "1": 30,
+        "3": 17
+      },
+      "train": {
+        "0": 1434,
+        "2": 808,
+        "1": 300,
+        "4": 234,
+        "3": 154
+      },
+      "val": {
+        "0": 172,
+        "2": 104,
+        "1": 40,
+        "4": 28,
+        "3": 22
+      }
+    }
+  },
+  "formats": {
+    "PNG": 3662
+  },
+  "color_modes": {
+    "RGB": 3662
+  },
+  "resolution": {
+    "width": {
+      "mean": 2015.1766794101584,
+      "std": 884.3019396271917,
+      "min": 474.0,
+      "p25": 1050.0,
+      "median": 2144.0,
+      "p75": 2588.0,
+      "max": 4288.0
+    },
+    "height": {
+      "mean": 1526.830147460404,
+      "std": 542.6631202194959,
+      "min": 358.0,
+      "p25": 1050.0,
+      "median": 1536.0,
+      "p75": 1958.0,
+      "max": 2848.0
+    },
+    "aspect_ratio": {
+      "mean": 1.2838175040895003,
+      "std": 0.18211590523336166,
+      "min": 1.0,
+      "p25": 1.0,
+      "median": 1.3333333333333333,
+      "p75": 1.391705069124424,
+      "max": 1.5056179775280898
+    },
+    "distinct_resolutions": 17,
+    "most_common_resolutions": [
+      {
+        "width": 1050,
+        "height": 1050,
+        "count": 974
+      },
+      {
+        "width": 2416,
+        "height": 1736,
+        "count": 638
+      },
+      {
+        "width": 2588,
+        "height": 1958,
+        "count": 533
+      },
+      {
+        "width": 3216,
+        "height": 2136,
+        "count": 410
+      },
+      {
+        "width": 2048,
+        "height": 1536,
+        "count": 351
+      },
+      {
+        "width": 819,
+        "height": 614,
+        "count": 287
+      },
+      {
+        "width": 3388,
+        "height": 2588,
+        "count": 141
+      },
+      {
+        "width": 1504,
+        "height": 1000,
+        "count": 92
+      },
+      {
+        "width": 1844,
+        "height": 1226,
+        "count": 61
+      },
+      {
+        "width": 4288,
+        "height": 2848,
+        "count": 52
+      }
+    ]
+  },
+  "quality": {
+    "brightness": {
+      "mean": 66.78701179768318,
+      "std": 17.97816712190887,
+      "min": 14.964523315429688,
+      "p25": 52.070165925867414,
+      "median": 68.95771187784726,
+      "p75": 80.83698695638905,
+      "max": 129.62010657269022
+    },
+    "contrast": {
+      "mean": 38.74141673655314,
+      "std": 9.73662875596797,
+      "min": 9.591121473028235,
+      "p25": 31.563068490559143,
+      "median": 40.06842731645429,
+      "p75": 45.32955986215464,
+      "max": 75.77684267670834
+    },
+    "laplacian_var": {
+      "mean": 50.356458619470224,
+      "std": 23.066465927212697,
+      "min": 3.9123345090752495,
+      "p25": 33.97321923312549,
+      "median": 52.39844569992313,
+      "p75": 64.81170992356783,
+      "max": 200.27554321289062
+    },
+    "sharpness_norm": {
+      "mean": 0.023902707749208635,
+      "std": 0.010110990216936407,
+      "min": 0.0040763202094997,
+      "p25": 0.01534453310728442,
+      "median": 0.023080428462980786,
+      "p75": 0.03127581062995429,
+      "max": 0.0783140756803686
+    },
+    "noise_sigma": {
+      "mean": 0.11874802818514418,
+      "std": 0.031004490785316006,
+      "min": 0.061430176925687946,
+      "p25": 0.09456646804375893,
+      "median": 0.11455346802625682,
+      "p75": 0.14255446743914155,
+      "max": 0.39362315645637297
+    },
+    "padding_ratio": {
+      "mean": 0.23446655728305743,
+      "std": 0.1320562227971565,
+      "min": 3.0281007751937984e-05,
+      "p25": 0.16582455842391305,
+      "median": 0.20830154418945312,
+      "p75": 0.2532054227941177,
+      "max": 0.5290476481119791
+    }
+  },
+  "hashes": {
+    "md5_computed": 3662,
+    "unique_md5": 3534,
+    "note": "MD5 is the authoritative exact-duplicate key. Perceptual hashes are recorded for investigation and clustering only and never justify exclusion."
+  },
+  "unreferenced_files": {
+    "train": 0,
+    "val": 0,
+    "test": 0
+  },
+  "unreferenced_file_examples": {},
+  "errors": []
+}

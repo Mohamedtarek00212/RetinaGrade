@@ -1,0 +1,56 @@
+# TEST-ONLY configuration. NOT fully paper-faithful.
+#
+# `loss.label_smoothing` (PG-20) and `scheduler.eta_min` (PG-18) resolve open
+# Paper Gaps with arbitrary, small, CI-friendly choices purely so the test
+# suite can exercise a full Trainer.fit() loop. Do NOT copy these two values
+# into configs/training.yaml -- doing so would silently convert a documented
+# Paper Gap into an undocumented invented default. Every other value here is
+# the paper-confirmed default already used by configs/training.yaml.
+
+epochs: 2   # small for fast tests; paper value is 50
+
+reproducibility:
+  seed: 0
+  deterministic: true
+
+optimizer:
+  name: "adamw"
+  lr: 0.0001
+  weight_decay: 0.0001
+  no_decay_patterns: ["bias", "norm"]
+  frozen_patterns: []
+
+scheduler:
+  name: "cosine_annealing"
+  eta_min: 0.00001   # arbitrary (PG-18) -- test-only
+
+loss:
+  label_smoothing: 0.1   # arbitrary (PG-20) -- test-only
+  lambda_cls: 0.5
+  class_weight_strategy: null
+  carm_pos_weight_enabled: false
+
+amp:
+  enabled: false
+
+gradient:
+  accumulation_steps: 1
+  clip_norm: null
+
+checkpoint:
+  dir: "outputs/checkpoints/training"
+  monitor_metric: "val_qwk"
+  monitor_mode: "max"
+  save_last: true
+
+early_stopping:
+  enabled: false
+  patience: 10
+  monitor_metric: "val_qwk"
+  mode: "max"
+
+logging:
+  log_dir: "outputs/logs/training"
+  csv_filename: "epoch_log.csv"
+  tensorboard_enabled: false
+  progress_bar: false

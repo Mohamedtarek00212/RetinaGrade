@@ -48,6 +48,8 @@ dependencies = [
 
   "torchvision>=0.20",
 
+  "tensorboard>=2.21",
+
   "tqdm>=4.67",
 
 ]

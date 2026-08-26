@@ -1,0 +1,362 @@
+# Data configuration — RetinaGrade / Dual-SwinOrd
+# Paths, splits, and label metadata for the APTOS-style DR grading dataset.
+
+paths:
+  base_dir: "data"
+  raw_dir: "data/raw"
+  splits_dir: "data/splits"
+  processed_dir: "data/processed"
+
+splits:
+  train:
+    csv: "data/splits/train.csv"
+    image_dir: "data/raw/train"
+  val:
+    csv: "data/splits/valid.csv"
+    image_dir: "data/raw/val"
+  test:
+    csv: "data/splits/test.csv"
+    image_dir: "data/raw/test"
+
+image:
+  extension: ".png"
+
+columns:
+  id_candidates: ["id_code", "image_id", "filename", "image", "id"]
+  label_candidates: ["diagnosis", "target", "label", "grade"]
+
+classes:
+  num_classes: 5
+  order: [0, 1, 2, 3, 4]
+  names:
+    0: "No DR (Normal)"
+    1: "Mild DR"
+    2: "Moderate DR"
+    3: "Severe DR"
+    4: "Proliferative DR (PDR)"
+
+seed: 42
+
+# ---------------------------------------------------------------------------
+# Evidence profile
+# ---------------------------------------------------------------------------
+# "paper_faithful": only steps described in the Dual-SwinOrd paper
+#                   (resize, normalize, h-flip, v-flip, rotation, color jitter).
+#                   Use this profile to reproduce the paper's reported numbers.
+# "eda_driven":     paper recipe + steps justified by the completed EDA
+#                   (border removal, circular crop, dataset-specific statistics,
+#                   optional CLAHE, mild blur/noise/gamma/scale jitter).
+# Every transform is tagged with `evidence` ("paper" | "eda" | "both") so any
+# reported result can state exactly which tier produced it.
+profile: "eda_driven"
+
+# ---------------------------------------------------------------------------
+# Output locations for data-preparation artefacts (reports, manifests)
+# ---------------------------------------------------------------------------
+outputs:
+  root: "outputs/data_prep"
+  audit_manifest: "outputs/data_prep/audit_manifest.csv"
+  audit_report: "outputs/data_prep/audit_report.json"
+  clean_manifest: "outputs/data_prep/clean_manifest.csv"
+  cleaning_report: "outputs/data_prep/cleaning_report.json"
+  quarantine_manifest: "outputs/data_prep/quarantine_manifest.csv"
+  split_report: "outputs/data_prep/split_verification_report.json"
+  statistics_report: "outputs/data_prep/dataset_statistics.json"
+  class_distribution: "outputs/data_prep/class_distribution.csv"
+  preview_dir: "outputs/data_prep/preview"
+  log_dir: "logs"
+
+# ---------------------------------------------------------------------------
+# Stage 1 — Dataset Audit (read-only, full corpus, single pixel pass)
+# ---------------------------------------------------------------------------
+audit:
+  enabled: true
+  # Full decode (not header-only): the EDA reports 0 corrupted files, so a
+  # nonzero count here means the local dataset copy differs from the audited one.
+  full_decode: true
+  # Quality metrics are computed on a downscaled proxy for tractability; MD5 is
+  # always computed over the original file bytes.
+  metric_long_side: 512
+  compute_md5: true
+  compute_perceptual_hash: true
+  perceptual_hash:
+    dhash_size: 8       # 8x8 gradient hash -> 64-bit
+    phash_size: 8       # 8x8 low-frequency DCT block
+    phash_image_size: 32
+  compute_quality_metrics: true
+  # Fundus-disc / black-padding estimation threshold (0-255 intensity).
+  tissue_threshold: 10
+  num_workers: 8        # ProcessPoolExecutor workers; decode of 4K PNGs dominates
+  chunk_size: 32
+  # Reuse manifest rows keyed by (path, size, mtime) unless --force is passed.
+  resume: true
+
+# ---------------------------------------------------------------------------
+# Stage 2 — Cleaning (decisions only; never deletes or modifies data/raw)
+# ---------------------------------------------------------------------------
+cleaning:
+  enabled: true
+  rules:
+    # MD5 is the ONLY authoritative duplicate detector.
+    exact_duplicates:
+      enabled: true
+      # Cross-split duplicate groups are confirmed leakage (EDA: 9 groups).
+      # The copy in `keep_split_priority` order is retained; the others are excluded.
+      exclude_cross_split: true
+      keep_split_priority: ["train", "val", "test"]
+      # Within-split duplicates are redundant but not leakage; flag by default.
+      exclude_within_split: false
+    # Perceptual hashing is INVESTIGATION ONLY. It can never exclude an image;
+    # it is used to quantify content-level leakage risk and to build group IDs
+    # for optional group-aware re-splitting.
+    # NOTE: every fundus photo is a bright disc on a black field, so dHash-only
+    # single-linkage clustering chains almost the whole corpus together (at
+    # threshold 6, 3087/3662 real APTOS images land in one cluster). Clustering
+    # therefore requires BOTH dHash and pHash to agree (src/data/cleaning.py:
+    # cluster_by_dual_hash), which drops the largest cluster to 35 images.
+    near_duplicates:
+      enabled: true
+      hamming_threshold: 2      # on each of dHash and pHash; agreement required
+      report_only: true         # immutable: enforced in code and by unit test
+    integrity:
+      enabled: true
+      exclude_unreadable: true  # EDA expects zero such cases
+    labels:
+      enabled: true
+      exclude_missing_label: true
+      exclude_out_of_range: true
+      exclude_duplicate_ids: false   # flag; EDA found 0 duplicate id_code
+      exclude_missing_file: true
+    # Quality outliers are FLAGGED, NEVER DELETED. Their labels are clinically
+    # valid and removing them would worsen minority-class scarcity (EDA §1.1).
+    quality_flags:
+      enabled: true
+      delete: false             # immutable: enforced in code
+      dark_brightness_max: 25.0
+      bright_brightness_min: 115.0
+      low_contrast_std_max: 15.0
+      # Sharpness is confounded with resolution (r ~= -0.80), so blur flagging
+      # uses the resolution-normalized Laplacian variance, never the raw value.
+      # Both sharpness_norm and noise_sigma are unitless and scale-dependent
+      # (an absolute sharpness cutoff of 0.15 flagged 100% of real APTOS, whose
+      # values span 0.004-0.078), so they are flagged by percentile instead,
+      # which reproduces the ~1% flag rate the EDA reported. Set to 0 to disable.
+      blur_percentile: 1.0
+      noise_percentile: 99.0
+
+# ---------------------------------------------------------------------------
+# Stage 3 — Split verification (always) and regeneration (opt-in)
+# ---------------------------------------------------------------------------
+splits_policy:
+  verify:
+    enabled: true
+    check_id_overlap: true
+    check_md5_overlap: true
+    check_near_duplicate_overlap: true
+    check_class_homogeneity: true
+    min_images_per_class: 1
+    # Raise instead of warn when exact-duplicate leakage survives cleaning.
+    strict: false
+  regenerate:
+    # OFF BY DEFAULT. Regenerating splits changes every downstream number and
+    # breaks comparability with the paper's 80/20 protocol; it must be explicit.
+    enabled: false
+    output_dir: "data/splits/v2_grouped"
+    ratios: {train: 0.8, val: 0.1, test: 0.1}
+    # APTOS has no patient/eye identifier; content clusters (MD5 groups, then
+    # perceptual-hash clusters) are the best available proxy. This is an
+    # approximation, NOT a claim of patient-level independence.
+    group_by: "content_cluster"
+    stratify_by: "label"
+    overwrite: false
+
+# ---------------------------------------------------------------------------
+# Stage 4 — Dataset statistics (imbalance analysis + normalization statistics)
+# ---------------------------------------------------------------------------
+statistics:
+  enabled: true
+  imbalance:
+    # ANALYSIS ONLY. No sampler, no oversampling, no class balancing is applied
+    # in this milestone; balancing belongs to the Training milestone.
+    enabled: true
+    # Reference values for reusable weighting interfaces (never auto-applied).
+    weight_strategies: ["inverse", "inverse_sqrt", "effective_number", "balanced"]
+    effective_number_beta: 0.9999
+    save_plot: true
+  normalization:
+    # auto     -> compute from the TRAIN split of included images, after the
+    #             deterministic geometric preprocessing and before augmentation.
+    # config   -> use `fallback_mean` / `fallback_std` below.
+    # imagenet -> use ImageNet statistics (ablation for ImageNet-pretrained Swin).
+    mode: "auto"
+    cache_path: "data/processed/normalization_stats.json"
+    max_images: null        # null = use every included training image
+    # Fallback values are EDA raw-image means/255 (R 108.26, G 57.09, B 18.30).
+    # NOTE: these were measured BEFORE black-border removal and are biased low;
+    # they are a fallback only, never the default.
+    fallback_mean: [0.4245, 0.2239, 0.0718]
+    fallback_std: [0.1150, 0.0615, 0.0597]
+    imagenet_mean: [0.485, 0.456, 0.406]
+    imagenet_std: [0.229, 0.224, 0.225]
+
+# ---------------------------------------------------------------------------
+# Stage 5 — Preprocessing (deterministic; identical for train / val / test)
+# ---------------------------------------------------------------------------
+# Canonical order is enforced in code (src/data/preprocessing/pipeline.py):
+#   border removal -> circular crop -> resize -> CLAHE -> illumination
+#   -> [augmentation, train split only] -> normalize -> to-tensor
+# Resize precedes augmentation because rotating a 4288x2848 image costs an
+# order of magnitude more than rotating 512x512, and the circular crop makes
+# post-resize rotation geometrically harmless. Normalization is last so it sees
+# post-augmentation pixel statistics.
+preprocessing:
+  image_size: 512          # 384 is the supported alternative; below ~384 risks
+                           # erasing few-pixel Grade-1 microaneurysms
+  black_border_removal:
+    enabled: true          # evidence: eda | priority: essential
+    threshold: 10          # intensity below this is treated as background
+    blur_kernel: 5         # denoise the mask only, never the output image
+    # Refuse to crop if the retained area falls below this fraction of the
+    # original: protects the ~1% genuinely dark images from being destroyed.
+    min_area_ratio: 0.10
+    padding: 0
+  circular_crop:
+    enabled: true          # evidence: eda | priority: essential
+    # Applied BEFORE rotation so rotation cannot reintroduce structured black
+    # wedges at the image corners.
+    margin_ratio: 0.0
+    fill_value: 0
+  resize:
+    enabled: true          # evidence: both | priority: essential
+    # INTER_AREA is mandatory for downscaling 4K -> 512: naive bilinear
+    # downsampling aliases away microaneurysm-scale lesions.
+    interpolation_down: "area"
+    interpolation_up: "linear"
+    keep_aspect_ratio: false
+  clahe:
+    # EDA-DRIVEN, NOT PAPER-DRIVEN. The paper never mentions CLAHE, Ben Graham
+    # preprocessing, or any contrast enhancement. Motivated by contrast range
+    # 10.9-70.7 and the non-linear brightness/grade association (chi2 p=0.0001).
+    # Off by default: must be justified by an A/B ablation before final results.
+    enabled: false         # evidence: eda | priority: recommended
+    clip_limit: 2.0
+    tile_grid_size: [8, 8]
+    # "lab" applies CLAHE to L only, preserving chrominance cues
+    # (hemorrhage redness, exudate paleness). "green" is the classic
+    # fundus alternative operating on the highest-contrast channel.
+    color_space: "lab"
+  illumination_correction:
+    enabled: false         # evidence: eda | priority: optional (ablation only)
+    sigma: 10.0
+    weight: 4.0
+  cache:
+    # Caches crop+resize output keyed by the geometric-config hash. This is the
+    # single largest training-throughput lever: decoding a 4K PNG per sample per
+    # epoch costs 1-2 orders of magnitude more than the augmentation itself.
+    enabled: false
+    dir: "data/processed/cache"
+    format: "png"
+
+# ---------------------------------------------------------------------------
+# Stage 6 — Augmentation (TRAIN SPLIT ONLY; eval pipeline is deterministic)
+# ---------------------------------------------------------------------------
+augmentation:
+  enabled: true
+  train:
+    horizontal_flip:
+      enabled: true        # evidence: both | priority: essential
+      p: 0.5
+    vertical_flip:
+      enabled: true        # evidence: paper | priority: recommended
+      p: 0.5
+    rotation:
+      enabled: true        # evidence: both | priority: essential
+      p: 0.6
+      limit: [-180, 180]
+      border_mode: "constant"
+      fill_value: 0
+    random_brightness:
+      enabled: true        # evidence: both (partial) | priority: essential
+      p: 0.7
+      limit: 0.25          # +/-25%: targets the confirmed brightness/grade
+                           # shortcut without washing out pale exudates
+    random_contrast:
+      enabled: true        # evidence: both (partial) | priority: recommended
+      p: 0.5
+      limit: 0.20
+    color_jitter:
+      enabled: true        # evidence: both | priority: essential
+      p: 0.5
+      brightness: 0.20
+      contrast: 0.20
+      saturation: 0.15
+      # Hue is tightly clustered in this dataset (23.57 deg +/- 14.65), so wide
+      # hue jitter leaves the physiologically plausible retinal gamut.
+      hue: 0.03
+    scale_jitter:
+      enabled: false       # evidence: eda | priority: optional
+      p: 0.5
+      scale_limit: [0.9, 1.1]
+    conservative_crop:
+      enabled: false       # evidence: eda | priority: optional
+      p: 0.3
+      # Anything more aggressive can remove the sole lesion in a Grade 1/3 image.
+      scale: [0.85, 1.0]
+    gamma:
+      enabled: false       # evidence: eda | priority: optional
+      p: 0.25
+      gamma_limit: [80, 120]
+    gaussian_blur:
+      enabled: false       # evidence: eda | priority: optional
+      p: 0.15
+      sigma_limit: [0.5, 1.5]
+    gaussian_noise:
+      enabled: false       # evidence: eda | priority: optional
+      p: 0.15
+      var_limit: [5.0, 25.0]
+  # Machine-enforced: constructing a pipeline containing any of these raises
+  # ForbiddenAugmentationError. MixUp/CutMix break ordinal label semantics and
+  # create clinically implausible composite lesions; CutOut/RandomErasing can
+  # erase the only lesion evidence in already-scarce Grade 1/3 images.
+  forbidden:
+    - "MixUp"
+    - "CutMix"
+    - "CutOut"
+    - "Cutout"
+    - "CoarseDropout"
+    - "GridDropout"
+    - "RandomErasing"
+    - "Erasing"
+
+# ---------------------------------------------------------------------------
+# Stage 7 — DataLoader factory (NO sampler / balancing / distributed logic)
+# ---------------------------------------------------------------------------
+dataloader:
+  batch_size: 16
+  num_workers: 4
+  pin_memory: true
+  persistent_workers: true
+  prefetch_factor: 2
+  drop_last: false
+  shuffle:
+    train: true
+    val: false
+    test: false
+
+# ---------------------------------------------------------------------------
+# Reproducibility
+# ---------------------------------------------------------------------------
+reproducibility:
+  # cuDNN deterministic + torch.use_deterministic_algorithms. Slower; keep on
+  # for final runs, off for exploration.
+  deterministic: true
+  cudnn_benchmark: false
+
+# ---------------------------------------------------------------------------
+# Per-dataset overrides (deep-merged over the sections above by
+# src/utils/config.py). Adding a new retinal dataset requires only a new block
+# here plus an adapter in src/data/datasets/.
+# ---------------------------------------------------------------------------
+dataset_name: "aptos2019"
+datasets:
+  aptos2019: {}

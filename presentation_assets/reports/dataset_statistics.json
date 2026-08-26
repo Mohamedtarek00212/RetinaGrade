@@ -1,0 +1,114 @@
+{
+  "stage": "statistics",
+  "generated_at_utc": "2026-08-01T08:26:23.599171+00:00",
+  "config_hash": "436d9571fce1",
+  "profile": "eda_driven",
+  "policy": {
+    "balancing_applied": false,
+    "sampler_implemented": false,
+    "note": "class imbalance is analysed and reported here; weighting and sampling are deferred to the Training milestone, where they can be validated against quadratic-weighted kappa"
+  },
+  "counts": {
+    "per_split": {
+      "test": {
+        "0": 197,
+        "1": 28,
+        "2": 77,
+        "3": 13,
+        "4": 27
+      },
+      "train": {
+        "0": 1434,
+        "1": 300,
+        "2": 808,
+        "3": 153,
+        "4": 234
+      },
+      "val": {
+        "0": 172,
+        "1": 34,
+        "2": 92,
+        "3": 21,
+        "4": 25
+      }
+    },
+    "overall": {
+      "0": 1803,
+      "1": 362,
+      "2": 977,
+      "3": 187,
+      "4": 286
+    },
+    "total_images": 3615
+  },
+  "class_names": {
+    "0": "No DR (Normal)",
+    "1": "Mild DR",
+    "2": "Moderate DR",
+    "3": "Severe DR",
+    "4": "Proliferative DR (PDR)"
+  },
+  "imbalance": {
+    "majority_minority_ratio": 9.641711229946525,
+    "entropy_bits": 1.8537246987161142,
+    "max_entropy_bits": 2.321928094887362,
+    "normalized_imbalance_index": 0.20164422714130636,
+    "gini": 0.6592385729508025,
+    "effective_num_classes": 3.6143211408611298
+  },
+  "split_homogeneity_chi_square": {
+    "statistic": 10.851288232490884,
+    "dof": 8,
+    "p_value": 0.21026863102042806,
+    "interpretation": "class proportions are homogeneous across splits (p >= 0.05)"
+  },
+  "reference_class_weights": {
+    "inverse": [
+      0.210331,
+      1.04759,
+      0.388155,
+      2.027954,
+      1.32597
+    ],
+    "inverse_sqrt": [
+      0.489901,
+      1.093332,
+      0.665517,
+      1.521198,
+      1.230052
+    ],
+    "effective_number": [
+      0.225535,
+      1.046582,
+      0.399754,
+      2.008432,
+      1.319697
+    ],
+    "balanced": [
+      0.210331,
+      1.04759,
+      0.388155,
+      2.027954,
+      1.32597
+    ]
+  },
+  "normalization": {
+    "mean": [
+      0.3858112836164846,
+      0.2040913117643135,
+      0.06115751019223669
+    ],
+    "std": [
+      0.2949677943634556,
+      0.16129463634063174,
+      0.07802564237306733
+    ],
+    "source": "computed",
+    "images": 2929,
+    "pixels": 767819776.0,
+    "preprocessing_hash": "b5954c864e28",
+    "split": "train",
+    "computed_at_utc": "2026-08-01T08:33:48.842440+00:00"
+  },
+  "duration_seconds": 445.26
+}

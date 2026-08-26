@@ -1,0 +1,36 @@
+{
+  "split": "val",
+  "checkpoint": "D:\\RetinaGrade\\outputs\\checkpoints\\training\\best.pt",
+  "checkpoint_epoch": 23,
+  "num_samples": 344,
+  "metrics": {
+    "qwk": 0.9177398382894351,
+    "accuracy": 0.8517441860465116,
+    "per_class_precision": {
+      "No DR (Normal)": 0.9941860465116279,
+      "Mild DR": 0.72,
+      "Moderate DR": 0.78,
+      "Severe DR": 0.3888888888888889,
+      "Proliferative DR (PDR)": 0.6551724137931034
+    },
+    "per_class_recall": {
+      "No DR (Normal)": 0.9941860465116279,
+      "Mild DR": 0.5294117647058824,
+      "Moderate DR": 0.8478260869565217,
+      "Severe DR": 0.3333333333333333,
+      "Proliferative DR (PDR)": 0.76
+    },
+    "per_class_f1": {
+      "No DR (Normal)": 0.9941860465116279,
+      "Mild DR": 0.6101694915254238,
+      "Moderate DR": 0.8125,
+      "Severe DR": 0.358974358974359,
+      "Proliferative DR (PDR)": 0.7037037037037037
+    },
+    "macro_f1": 0.6959067201430229,
+    "mae": 0.18604651162790697,
+    "within_one_accuracy": 0.9709302325581395,
+    "referable_auc": 0.9792809905726748,
+    "referable_fnr": 0.050724637681159424
+  }
+}

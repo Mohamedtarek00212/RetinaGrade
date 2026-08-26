@@ -1,0 +1,39 @@
+# TEST-ONLY configuration. NOT paper-faithful.
+#
+# Every value below resolves an open Paper Gap (see
+# docs/milestone_04_paper_gaps.md) with an arbitrary, small, CI-friendly
+# choice, purely so tests/test_dual_swinord.py can exercise one real
+# end-to-end forward pass through DualSwinOrd. Do NOT copy any value from
+# this file into configs/model.yaml -- doing so would silently convert a
+# documented Paper Gap into an undocumented invented default.
+
+model_name: "dual_swinord"
+
+backbone:
+  name: "timm_swin"
+  variant: "swin_tiny_patch4_window7_224"   # NOT paper-confirmed (PG-01)
+  pretrained: false                         # NOT paper-confirmed (PG-01)
+  image_size: 224                           # NOT paper-confirmed (PG-02)
+
+spm:
+  name: "test_spm"                # tests/model_doubles.py only (PG-06)
+  inject_at_stage: 0               # NOT paper-confirmed (PG-05)
+  text_embedding_dim: 16           # arbitrary (PG-03)
+
+plka:
+  input_stage: 0                   # NOT paper-confirmed (PG-10)
+  kernel_size: 3                   # arbitrary (PG-07)
+  activation: "relu"                # arbitrary (PG-07)
+  normalization: "batch_norm_2d"      # arbitrary (PG-08)
+  fusion:
+    name: "test_plka_fusion"        # tests/model_doubles.py only (PG-09)
+
+neck:
+  pooling: "test_neck_pooling"      # tests/model_doubles.py only (PG-11)
+  hidden_dim: 32                     # arbitrary (PG-12a)
+  dropout: 0.0                        # arbitrary (PG-12b)
+  activation: "identity"                # arbitrary (PG-12b)
+
+heads:
+  ordinal:
+    name: "test_ordinal_head"         # tests/model_doubles.py only (PG-13/PG-14)

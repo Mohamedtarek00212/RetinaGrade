@@ -1,0 +1,40 @@
+# Dual-SwinOrd model architecture configuration.
+#
+# This file now contains the runnable default used for paper reproduction.
+# Values marked "Implementation assumption (not explicitly specified in the
+# paper)" are engineering defaults required to obtain a trainable model while
+# the corresponding Paper Gap remains textually unresolved. Replace them with
+# paper-reported values as soon as they become available.
+#
+# See docs/milestone_04_paper_gaps.md for the gap catalogue.
+
+model_name: "dual_swinord"
+
+backbone:
+  name: "timm_swin"
+  variant: "swin_tiny_patch4_window7_224"  # Implementation assumption (not explicitly specified in the paper)
+  pretrained: true                            # Implementation assumption (not explicitly specified in the paper)
+  image_size: 512                           # Implementation assumption (not explicitly specified in the paper); aligned with data preprocessing
+
+spm:
+  name: "default"                           # Implementation assumption (not explicitly specified in the paper): default FiLM-style gate
+  inject_at_stage: 3                        # Implementation assumption (not explicitly specified in the paper)
+  text_embedding_dim: 512                   # Implementation assumption (not explicitly specified in the paper)
+
+plka:
+  input_stage: 3                            # Implementation assumption (not explicitly specified in the paper)
+  kernel_size: 3                            # Implementation assumption (not explicitly specified in the paper)
+  activation: "gelu"                        # Implementation assumption (not explicitly specified in the paper)
+  normalization: "batch_norm_2d"              # Implementation assumption (not explicitly specified in the paper)
+  fusion:
+    name: "default"                         # Implementation assumption (not explicitly specified in the paper): SE-style channel attention fusion
+
+neck:
+  pooling: "default"                        # Implementation assumption (not explicitly specified in the paper): global average pooling
+  hidden_dim: 512                           # Implementation assumption (not explicitly specified in the paper)
+  dropout: 0.0                              # Implementation assumption (not explicitly specified in the paper)
+  activation: "identity"                    # Implementation assumption (not explicitly specified in the paper)
+
+heads:
+  ordinal:
+    name: "default"                         # Implementation assumption (not explicitly specified in the paper): independent per-threshold linear layer

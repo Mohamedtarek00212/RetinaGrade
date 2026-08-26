@@ -1,0 +1,81 @@
+{
+  "split": "test",
+  "checkpoint": "D:\\RetinaGrade\\outputs\\checkpoints\\training\\best.pt",
+  "checkpoint_epoch": 23,
+  "num_samples": 342,
+  "metrics": {
+    "qwk": 0.9074447670127441,
+    "accuracy": 0.868421052631579,
+    "per_class_precision": {
+      "No DR (Normal)": 1.0,
+      "Mild DR": 0.6842105263157895,
+      "Moderate DR": 0.693069306930693,
+      "Severe DR": 0.4444444444444444,
+      "Proliferative DR (PDR)": 0.8421052631578947
+    },
+    "per_class_recall": {
+      "No DR (Normal)": 0.9847715736040609,
+      "Mild DR": 0.4642857142857143,
+      "Moderate DR": 0.9090909090909091,
+      "Severe DR": 0.3076923076923077,
+      "Proliferative DR (PDR)": 0.5925925925925926
+    },
+    "per_class_f1": {
+      "No DR (Normal)": 0.9923273657289002,
+      "Mild DR": 0.5531914893617021,
+      "Moderate DR": 0.7865168539325843,
+      "Severe DR": 0.36363636363636365,
+      "Proliferative DR (PDR)": 0.6956521739130435
+    },
+    "macro_f1": 0.6782648493145188,
+    "mae": 0.1783625730994152,
+    "within_one_accuracy": 0.9619883040935673,
+    "referable_auc": 0.9818423551756885,
+    "referable_fnr": 0.03418803418803419
+  },
+  "ece": 0.07210837104167162,
+  "confusion_matrix": [
+    [
+      194,
+      2,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      13,
+      14,
+      0,
+      1
+    ],
+    [
+      0,
+      2,
+      70,
+      3,
+      2
+    ],
+    [
+      0,
+      0,
+      9,
+      4,
+      0
+    ],
+    [
+      0,
+      2,
+      7,
+      2,
+      16
+    ]
+  ],
+  "artefacts": {
+    "metrics": "outputs\\test_evaluation\\metrics.json",
+    "confusion_matrix_csv": "outputs\\test_evaluation\\confusion_matrix.csv",
+    "confusion_matrix_json": "outputs\\test_evaluation\\confusion_matrix.json",
+    "confusion_matrix_plot": "outputs\\test_evaluation\\confusion_matrix.png",
+    "reliability_diagram": "outputs\\test_evaluation\\reliability_diagram.png"
+  }
+}

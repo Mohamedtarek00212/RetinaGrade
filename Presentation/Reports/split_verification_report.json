@@ -1,0 +1,73 @@
+{
+  "status": "warn",
+  "summary": {
+    "stage": "split_verification",
+    "generated_at_utc": "2026-08-01T08:04:13.015926+00:00",
+    "config_hash": "436d9571fce1",
+    "profile": "eda_driven",
+    "images_considered": 3615,
+    "per_split_counts": {
+      "train": 2929,
+      "val": 344,
+      "test": 342
+    },
+    "regeneration_enabled": false
+  },
+  "checks": {
+    "id_overlap": {
+      "status": "pass",
+      "overlaps": 0,
+      "affected_images": 0,
+      "examples": [],
+      "meaning": "the same identifier appears in more than one split"
+    },
+    "md5_overlap": {
+      "status": "pass",
+      "overlaps": 0,
+      "affected_images": 0,
+      "examples": [],
+      "meaning": "byte-identical images shared between splits are unambiguous data leakage"
+    },
+    "near_duplicate_overlap": {
+      "status": "warn",
+      "clusters": 25,
+      "affected_images": 126,
+      "meaning": "visually similar images span splits; this is a content-level leakage RISK, reported for investigation only and never acted on automatically"
+    },
+    "class_homogeneity": {
+      "status": "pass",
+      "statistic": 10.851288232490884,
+      "dof": 8,
+      "p_value": 0.21026863102042806,
+      "interpretation": "class proportions are homogeneous across splits (p >= 0.05)",
+      "per_split_proportions": {
+        "test": {
+          "0": 0.576,
+          "1": 0.0819,
+          "2": 0.2251,
+          "3": 0.038,
+          "4": 0.0789
+        },
+        "train": {
+          "0": 0.4896,
+          "1": 0.1024,
+          "2": 0.2759,
+          "3": 0.0522,
+          "4": 0.0799
+        },
+        "val": {
+          "0": 0.5,
+          "1": 0.0988,
+          "2": 0.2674,
+          "3": 0.061,
+          "4": 0.0727
+        }
+      }
+    },
+    "class_coverage": {
+      "status": "pass",
+      "minimum_required": 1,
+      "shortfalls": []
+    }
+  }
+}

@@ -1,0 +1,37 @@
+✅ Milestone 01
+Project Setup
+
+↓
+
+✅ Milestone 02
+EDA
+
+↓
+
+✅ Milestone 03
+Data Preparation   ← (أنت هنا)
+
+↓
+
+🟡 Milestone 04
+Model Development / Training Pipeline
+
+↓
+
+🟡 Milestone 05
+Training Experiments
+
+↓
+
+🟡 Milestone 06
+Evaluation
+
+↓
+
+🟡 Milestone 07
+Explainability (Grad-CAM / Attention Visualization) إذا كان البحث يتضمنها
+
+↓
+
+🟡 Milestone 08
+Inference & Deployment

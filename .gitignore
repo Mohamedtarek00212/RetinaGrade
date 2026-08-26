@@ -45,6 +45,8 @@ dist/
 .qodo/
 .agents/
 .ipynb_checkpoints/
+*_output.log
+tmp_*.py
 *.docx
 .DS_Store
 Thumbs.db

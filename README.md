@@ -17,10 +17,10 @@ RetinaGrade/
 │   └── EDA_APTOS_Research.ipynb   # Publication-quality EDA with inline visualizations
 ├── src/
 │   ├── data/                # dataset.py, preprocessing.py, dataloader.py
-│   ├── models/              # swin_backbone.py, spm.py, plka.py, dual_head.py, dual_swinord.py
-│   ├── losses/              # classification_loss.py, ordinal_loss.py, total_loss.py
-│   ├── training/            # trainer.py, callbacks.py
-│   ├── evaluation/          # metrics.py, evaluator.py, confusion_matrix.py
+│   ├── models/              # config.py, registry.py, backbones/, semantic_prior/, attention/, neck/, heads/, dual_head.py, dual_swinord.py
+│   ├── losses/              # base.py, classification_loss.py, ordinal_loss.py, carm_loss.py, total_loss.py
+│   ├── training/            # config.py, optim.py, scheduler.py, amp.py, checkpoint.py, manifest.py, csv_logger.py, tensorboard_logger.py, callbacks.py, trainer.py
+│   ├── evaluation/          # metrics.py, calibration.py, evaluator.py, confusion_matrix.py
 │   ├── visualization/       # gradcam.py, shap_analysis.py
 │   └── utils/               # seed.py, logger.py, helpers.py
 ├── scripts/
@@ -43,11 +43,11 @@ RetinaGrade/
 
 - [x] Repository scaffold and project organization
 - [x] Exploratory Data Analysis (`notebooks/EDA_APTOS_Research.ipynb`)
-- [ ] Data ingestion, preprocessing, and train/val/test split creation
-- [ ] Swin Transformer backbone with SPM and PLKA
-- [ ] Dual-head (classification + ordinal) architecture
-- [ ] Classification, ordinal, and combined training losses
-- [ ] Training loop, validation, and hyperparameter search
+- [x] Data ingestion, preprocessing, and train/val/test split creation
+- [x] Swin Transformer backbone with SPM and PLKA
+- [x] Dual-head (classification + ordinal) architecture
+- [x] Classification, ordinal, and combined training losses (Eq. 7-9; see `docs/milestone_04_paper_gaps.md`)
+- [x] Training loop and per-epoch validation (`src/training/trainer.py`); hyperparameter search is not implemented -- the paper reports one fixed hyperparameter set (`configs/training.yaml`), not a search
 - [ ] Final locked-test evaluation and calibration
 - [ ] Explainability (Grad-CAM/SHAP) and report generation
 
