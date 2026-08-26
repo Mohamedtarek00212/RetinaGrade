@@ -78,7 +78,7 @@ data = [
 
 where = ["."]
 
-include = ["src", "src.*"]
+include = ["src", "src.*", "deployment", "deployment.*"]
 
 
 

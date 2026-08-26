@@ -16,7 +16,7 @@ RetinaGrade/
 ├── notebooks/
 │   └── EDA_APTOS_Research.ipynb   # Publication-quality EDA with inline visualizations
 ├── src/
-│   ├── data/                # dataset.py, preprocessing.py, dataloader.py
+│   ├── data/                # datasets, preprocessing/, augmentation, audit, splits
 │   ├── models/              # config.py, registry.py, backbones/, semantic_prior/, attention/, neck/, heads/, dual_head.py, dual_swinord.py
 │   ├── losses/              # base.py, classification_loss.py, ordinal_loss.py, carm_loss.py, total_loss.py
 │   ├── training/            # config.py, optim.py, scheduler.py, amp.py, checkpoint.py, manifest.py, csv_logger.py, tensorboard_logger.py, callbacks.py, trainer.py
@@ -26,8 +26,10 @@ RetinaGrade/
 ├── scripts/
 │   ├── train.py
 │   ├── evaluate.py
-│   ├── explain.py
 │   └── predict.py
+├── deployment/              # Single-image inference utilities
+├── Presentation/            # Curated final presentation deliverables
+├── presentation_assets/     # Source archive used to build the presentation
 ├── outputs/                 # Experiment outputs and reports (not committed)
 ├── checkpoints/             # Saved model weights (not committed)
 ├── logs/                    # Training logs (not committed)
@@ -105,9 +107,19 @@ Run the test suite to confirm the package and dependencies are installed correct
 pytest
 ```
 
-`scripts/train.py`, `scripts/prepare_data.py`, and `scripts/evaluate.py` are
-implemented. `scripts/predict.py` and `scripts/explain.py` remain placeholders
-for the deployment and explainability milestones.
+`scripts/train.py`, `scripts/prepare_data.py`, `scripts/evaluate.py`, and
+`scripts/predict.py` are implemented. Explainability remains a future milestone.
+
+### Single-image prediction
+
+After downloading `best.pt` as described below:
+
+```bash
+python scripts/predict.py path/to/fundus.png
+```
+
+The command prints the predicted grade, class name, confidence, class
+probabilities, and ordinal-threshold probabilities as JSON.
 
 ## Data setup
 
