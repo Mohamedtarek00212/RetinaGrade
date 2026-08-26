@@ -48,8 +48,27 @@ RetinaGrade/
 - [x] Dual-head (classification + ordinal) architecture
 - [x] Classification, ordinal, and combined training losses (Eq. 7-9; see `docs/milestone_04_paper_gaps.md`)
 - [x] Training loop and per-epoch validation (`src/training/trainer.py`); hyperparameter search is not implemented -- the paper reports one fixed hyperparameter set (`configs/training.yaml`), not a search
-- [ ] Final locked-test evaluation and calibration
+- [x] Final locked-test evaluation and calibration
 - [ ] Explainability (Grad-CAM/SHAP) and report generation
+
+## Final test results
+
+The validation-selected `best.pt` checkpoint was evaluated once on the locked
+test split (342 images):
+
+| Metric | Test result |
+|---|---:|
+| Accuracy | 86.84% |
+| Quadratic Weighted Kappa (QWK) | 0.9074 |
+| Macro F1 | 67.83% |
+| Mean Absolute Error (MAE) | 0.1784 |
+| Within-one-grade accuracy | 96.20% |
+| Referable DR AUC | 98.18% |
+| Referable DR false-negative rate | 3.42% |
+
+The checkpoint was selected at epoch 24 using validation QWK (`0.9177`). The
+test split was used only for final evaluation and did not influence checkpoint
+selection.
 
 ## Environment setup
 
@@ -86,7 +105,9 @@ Run the test suite to confirm the package and dependencies are installed correct
 pytest
 ```
 
-> Note: `scripts/train.py`, `scripts/evaluate.py`, `scripts/predict.py`, and `scripts/explain.py` are still skeletons; running them directly will raise `NotImplementedError` until their implementations are added in later milestones.
+`scripts/train.py`, `scripts/prepare_data.py`, and `scripts/evaluate.py` are
+implemented. `scripts/predict.py` and `scripts/explain.py` remain placeholders
+for the deployment and explainability milestones.
 
 ## Data setup
 
@@ -106,6 +127,22 @@ Split CSVs belong in `data/splits/` as `train.csv`, `valid.csv`, and `test.csv`.
 The expected columns follow the candidates in `configs/data.yaml` (for example `id_code` and `diagnosis`).
 
 Raw images and CSVs are **not** committed to Git (see `.gitignore`).
+
+## Model checkpoint
+
+The deployment checkpoint is `outputs/checkpoints/training/best.pt`. It is not
+stored in Git because it is approximately 523 MB. Copy or download it separately
+and place it at the same path after cloning the repository.
+
+Checkpoint integrity:
+
+```text
+SHA256: 5B979123FDA8179F6DFD59AD45EA0E7CE3D8B6B6DF47CFBA39776528779DF389
+```
+
+`best.pt` contains the model, optimizer, and scheduler states so training can be
+resumed. A smaller inference-only artifact should be exported when the deployment
+application is implemented.
 
 ## Git and large-file notes
 
