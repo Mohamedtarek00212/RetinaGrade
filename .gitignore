@@ -23,6 +23,11 @@ data/splits/*.csv
 docs/literature/*.pdf
 outputs/*
 !outputs/.gitkeep
+!outputs/checkpoints/
+outputs/checkpoints/*
+!outputs/checkpoints/training/
+outputs/checkpoints/training/*
+!outputs/checkpoints/training/best.pt
 checkpoints/*
 !checkpoints/.gitkeep
 logs/*
@@ -40,6 +45,7 @@ dist/
 *.pt
 *.pth
 *.ckpt
+!outputs/checkpoints/training/best.pt
 
 # IDE / agent / temp files
 .qodo/
