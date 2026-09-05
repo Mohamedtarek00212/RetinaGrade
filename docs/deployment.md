@@ -122,6 +122,18 @@ top-1 predictions against the previous browser model on all 15 curated samples.
 Every tested activation map had a normalized range from 0 to 1 and non-zero
 spatial variation.
 
+## On-device PDF reports
+
+The result workspace can generate a detailed clinician review report and a
+plain-language patient information summary. The patient document is gated by a
+clinician-review confirmation and clinician-authored next steps. Both documents
+include explicit research-use limitations, and neither makes an automated care
+decision. Names, identifiers, notes, images, and generated PDFs stay inside the
+browser and are not sent to the static host.
+
+The PDF library is split into lazy production chunks, so it is downloaded only
+when a report is requested and does not add to the initial application load.
+
 ## Container production settings
 
 - Serve port `8080` behind the hosting platform's HTTPS proxy.

@@ -68,7 +68,7 @@ RetinaGrade/
 - [x] Training loop and per-epoch validation (`src/training/trainer.py`); hyperparameter search is not implemented -- the paper reports one fixed hyperparameter set (`configs/training.yaml`), not a search
 - [x] Final locked-test evaluation and calibration
 - [x] Browser class-activation explanation and research guidance
-- [ ] Downloadable report generation
+- [x] Downloadable clinician and patient PDF reports
 
 ## Final test results
 
@@ -129,6 +129,10 @@ pytest
 class-specific activation map with confidence context and conservative research
 guidance. The map shows spatial contribution to the selected class; it is not a
 lesion detector or a clinical explanation.
+
+After clinician review, the browser can generate two local PDF documents: a
+detailed clinician review report and a plain-language patient information
+summary. Patient data remains in memory inside the browser and is not uploaded.
 
 The FastAPI backend and React research interface are documented in
 `deployment/README.md` and `frontend/README.md`.

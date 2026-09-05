@@ -10,6 +10,12 @@ The explanation view overlays the areas that contributed most strongly to the
 selected class and pairs them with confidence-aware research guidance. It does
 not identify lesions, establish a diagnosis, or determine clinical urgency.
 
+The reporting workspace generates two A4 PDFs. The clinician report includes
+the detailed prediction, probabilities, ordinal thresholds, image quality,
+focus map, notes, and sign-off fields. The patient summary uses simpler wording
+and requires the reviewing clinician to confirm review and enter the intended
+next steps. Report generation is lazy-loaded and remains entirely on-device.
+
 ## Local development
 
 Start the frontend:

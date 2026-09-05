@@ -30,7 +30,7 @@ body {
   color: var(--color-text-primary);
 }
 
-button, input { font: inherit; }
+button, input, textarea { font: inherit; }
 button { letter-spacing: 0; }
 
 .app-shell { min-height: 100vh; }
@@ -196,6 +196,31 @@ h1 { font-size: clamp(26px, 3vw, 38px); line-height: 1.1; letter-spacing: 0; mar
 .guidance-item small { color: var(--color-text-secondary); font-size: 10px; line-height: 1.5; }
 .result-note { display: flex; align-items: flex-start; gap: 9px; padding: 12px; color: var(--color-analytical); background: rgba(54, 181, 165, 0.08); border: 1px solid rgba(54, 181, 165, 0.2); }
 .result-note p { margin: 0; color: #9dcfc9; font-size: 12px; line-height: 1.5; }
+.report-section { display: grid; gap: 16px; padding-top: 4px; }
+.report-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.report-form label { min-width: 0; display: grid; gap: 6px; }
+.report-form label > span { color: var(--color-text-secondary); font-size: 10px; font-weight: 700; text-transform: uppercase; }
+.report-form input, .report-form textarea { width: 100%; border: 1px solid var(--color-border); border-radius: 4px; background: #0e0d0d; color: var(--color-text-primary); outline: 0; }
+.report-form input { height: 38px; padding: 0 10px; }
+.report-form textarea { min-height: 72px; padding: 9px 10px; resize: vertical; line-height: 1.5; }
+.report-form input:focus, .report-form textarea:focus { border-color: var(--color-analytical); box-shadow: 0 0 0 2px rgba(54, 181, 165, 0.12); }
+.report-field-wide { grid-column: 1 / -1; }
+.review-confirmation { display: grid; grid-template-columns: 18px minmax(0, 1fr); align-items: start; gap: 10px; padding: 12px; border: 1px solid var(--color-border); background: #151313; cursor: pointer; }
+.review-confirmation input { width: 16px; height: 16px; margin: 2px 0 0; accent-color: var(--color-analytical); }
+.review-confirmation span { display: grid; gap: 4px; color: var(--color-text-secondary); font-size: 10px; line-height: 1.5; }
+.review-confirmation strong { color: var(--color-text-primary); font-size: 11px; }
+.report-error { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; color: #efb1b5; background: rgba(185, 58, 67, 0.1); border-left: 3px solid var(--color-critical); font-size: 11px; line-height: 1.5; }
+.report-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.report-actions article { min-width: 0; display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 10px; padding: 13px; border: 1px solid var(--color-border); background: #191616; }
+.report-type-icon { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 5px; background: rgba(232, 106, 51, 0.12); color: var(--color-primary-hover); }
+.report-type-icon.patient { background: rgba(54, 181, 165, 0.12); color: var(--color-analytical); }
+.report-actions article > div { display: grid; align-content: start; gap: 5px; }
+.report-actions article strong { font-size: 12px; }
+.report-actions article small { min-height: 42px; color: var(--color-text-secondary); font-size: 9px; line-height: 1.5; }
+.report-actions button { grid-column: 1 / -1; min-height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid #655a57; border-radius: 4px; background: var(--color-surface-raised); color: var(--color-text-primary); cursor: pointer; font-size: 10px; font-weight: 700; }
+.report-actions button:hover:not(:disabled) { border-color: var(--color-primary); color: var(--color-primary-hover); }
+.report-actions button:disabled { cursor: wait; opacity: 0.6; }
+.report-privacy { display: flex; align-items: center; gap: 7px; color: #85807d; font-size: 9px; }
 
 .grade-0 { color: var(--color-grade-0); background-color: var(--color-grade-0); }
 .grade-1 { color: var(--color-grade-1); background-color: var(--color-grade-1); }
@@ -246,6 +271,8 @@ h1 { font-size: clamp(26px, 3vw, 38px); line-height: 1.1; letter-spacing: 0; mar
   .confidence { grid-column: 2; text-align: left; border-top: 1px solid var(--color-border); padding-top: 10px; }
   .confidence strong { font-size: 20px; }
   .insight-grid, .ordinal-list { grid-template-columns: 1fr; }
+  .report-form, .report-actions { grid-template-columns: 1fr; }
+  .report-field-wide { grid-column: auto; }
   .quality-strip { grid-template-columns: 1fr; }
   .focus-figure { grid-template-columns: 1fr; }
   .focus-figure figcaption { border-left: 0; border-top: 1px solid var(--color-border); }

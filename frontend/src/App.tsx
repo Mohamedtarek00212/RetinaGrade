@@ -5,7 +5,10 @@ import {
   Camera,
   CheckCircle2,
   CircleHelp,
+  ClipboardCheck,
   Clock3,
+  FileDown,
+  FileText,
   Eye,
   GitCompareArrows,
   ImagePlus,
@@ -16,12 +19,16 @@ import {
   ScanLine,
   ShieldCheck,
   ShieldAlert,
+  Stethoscope,
   Upload,
+  UserRound,
 } from "lucide-react";
 import { ChangeEvent, DragEvent, useEffect, useRef, useState } from "react";
 
 import { predictOnDevice } from "./inference/model";
 import type { BrowserPrediction, ModelProgress } from "./inference/types";
+import { generateDoctorReport, generatePatientReport } from "./report";
+import type { ReportDetails } from "./report";
 
 const ACCEPTED_TYPES = ["image/png", "image/jpeg"];
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
@@ -105,6 +112,17 @@ function App() {
   const [isDragging, setIsDragging] = useState(false);
   const [isPredicting, setIsPredicting] = useState(false);
   const [resultView, setResultView] = useState<ResultView>("summary");
+  const [reportDetails, setReportDetails] = useState<ReportDetails>({
+    patientName: "",
+    patientId: "",
+    clinicianName: "",
+    clinicName: "",
+    clinicianNotes: "",
+    patientNextSteps: "",
+  });
+  const [reportReviewed, setReportReviewed] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
+  const [generatingReport, setGeneratingReport] = useState<"doctor" | "patient" | null>(null);
 
   const derived = prediction
     ? (() => {
@@ -133,6 +151,15 @@ function App() {
     setError(null);
     setPrediction(null);
     setResultView("summary");
+    setReportReviewed(false);
+    setReportError(null);
+    setReportDetails((current) => ({
+      ...current,
+      patientName: "",
+      patientId: "",
+      clinicianNotes: "",
+      patientNextSteps: "",
+    }));
     if (!ACCEPTED_TYPES.includes(selected.type)) {
       setError("Choose a PNG or JPEG fundus image.");
       return;
@@ -168,6 +195,8 @@ function App() {
     setPreview(null);
     setPrediction(null);
     setError(null);
+    setReportReviewed(false);
+    setReportError(null);
     if (inputRef.current) inputRef.current.value = "";
   };
 
@@ -184,6 +213,43 @@ function App() {
       setError(requestError instanceof Error ? requestError.message : "Analysis failed.");
     } finally {
       setIsPredicting(false);
+    }
+  };
+
+  const updateReportField = (field: keyof ReportDetails, value: string) => {
+    setReportDetails((current) => ({ ...current, [field]: value }));
+    setReportError(null);
+  };
+
+  const downloadReport = async (audience: "doctor" | "patient") => {
+    if (!file || !prediction) return;
+    if (!reportDetails.patientName.trim() || !reportDetails.clinicianName.trim()) {
+      setReportError("Patient name and reviewing clinician are required for both reports.");
+      return;
+    }
+    if (audience === "patient" && !reportDetails.patientNextSteps.trim()) {
+      setReportError("Enter the clinician-approved next steps before creating the patient summary.");
+      return;
+    }
+    if (audience === "patient" && !reportReviewed) {
+      setReportError("The clinician must confirm review before creating the patient summary.");
+      return;
+    }
+
+    setGeneratingReport(audience);
+    setReportError(null);
+    try {
+      const context = { file, prediction, details: reportDetails };
+      if (audience === "doctor") await generateDoctorReport(context);
+      else await generatePatientReport(context);
+    } catch (reportGenerationError) {
+      setReportError(
+        reportGenerationError instanceof Error
+          ? reportGenerationError.message
+          : "Could not create the PDF report.",
+      );
+    } finally {
+      setGeneratingReport(null);
     }
   };
 
@@ -553,6 +619,132 @@ function App() {
                     Analysis completed locally with the validation-selected ONNX model on {prediction.runtime}.
                   </p>
                 </div>
+
+                <section className="report-section" aria-labelledby="report-heading">
+                  <div className="section-label">
+                    <span id="report-heading">Professional reports</span>
+                    <FileText size={16} />
+                  </div>
+
+                  <div className="report-form">
+                    <label>
+                      <span>Patient name *</span>
+                      <input
+                        type="text"
+                        value={reportDetails.patientName}
+                        maxLength={80}
+                        autoComplete="name"
+                        onChange={(event) => updateReportField("patientName", event.target.value)}
+                      />
+                    </label>
+                    <label>
+                      <span>Patient ID</span>
+                      <input
+                        type="text"
+                        value={reportDetails.patientId}
+                        maxLength={40}
+                        onChange={(event) => updateReportField("patientId", event.target.value)}
+                      />
+                    </label>
+                    <label>
+                      <span>Reviewing clinician *</span>
+                      <input
+                        type="text"
+                        value={reportDetails.clinicianName}
+                        maxLength={80}
+                        onChange={(event) => updateReportField("clinicianName", event.target.value)}
+                      />
+                    </label>
+                    <label>
+                      <span>Clinic or practice</span>
+                      <input
+                        type="text"
+                        value={reportDetails.clinicName}
+                        maxLength={80}
+                        onChange={(event) => updateReportField("clinicName", event.target.value)}
+                      />
+                    </label>
+                    <label className="report-field-wide">
+                      <span>Clinician notes</span>
+                      <textarea
+                        value={reportDetails.clinicianNotes}
+                        maxLength={900}
+                        rows={4}
+                        onChange={(event) => updateReportField("clinicianNotes", event.target.value)}
+                      />
+                    </label>
+                    <label className="report-field-wide">
+                      <span>Clinician-approved next steps for the patient *</span>
+                      <textarea
+                        value={reportDetails.patientNextSteps}
+                        maxLength={600}
+                        rows={3}
+                        onChange={(event) => updateReportField("patientNextSteps", event.target.value)}
+                      />
+                    </label>
+                  </div>
+
+                  <label className="review-confirmation">
+                    <input
+                      type="checkbox"
+                      checked={reportReviewed}
+                      onChange={(event) => {
+                        setReportReviewed(event.target.checked);
+                        setReportError(null);
+                      }}
+                    />
+                    <span>
+                      <strong>Clinician review confirmed</strong>
+                      I reviewed the image and model output. The patient summary reflects my own
+                      communication plan, not an automated care decision.
+                    </span>
+                  </label>
+
+                  {reportError && (
+                    <div className="report-error" role="alert">
+                      <AlertCircle size={17} />
+                      <span>{reportError}</span>
+                    </div>
+                  )}
+
+                  <div className="report-actions">
+                    <article>
+                      <span className="report-type-icon"><Stethoscope size={20} /></span>
+                      <div>
+                        <strong>Clinician review report</strong>
+                        <small>Detailed model output, image quality, focus map, notes, and sign-off.</small>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => downloadReport("doctor")}
+                        disabled={generatingReport !== null}
+                      >
+                        {generatingReport === "doctor" ? <LoaderCircle className="spin" size={17} /> : <FileDown size={17} />}
+                        Download clinician PDF
+                      </button>
+                    </article>
+                    <article>
+                      <span className="report-type-icon patient"><UserRound size={20} /></span>
+                      <div>
+                        <strong>Patient information summary</strong>
+                        <small>Plain-language result and the next steps approved by the clinician.</small>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => downloadReport("patient")}
+                        disabled={generatingReport !== null}
+                      >
+                        {generatingReport === "patient" ? <LoaderCircle className="spin" size={17} /> : <ClipboardCheck size={17} />}
+                        Download patient PDF
+                      </button>
+                    </article>
+                  </div>
+
+                  <div className="report-privacy">
+                    <LockKeyhole size={14} />
+                    Report data and PDF generation remain inside this browser.
+                  </div>
+                </section>
               </div>
             ) : (
               <div className="empty-result">
