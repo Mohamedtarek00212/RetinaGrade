@@ -86,6 +86,29 @@ IndexedDB, and runs inference entirely inside the visitor's browser. It tries
 WebGPU first and falls back to WebAssembly CPU execution. Uploaded images never
 leave the device, and no paid backend is required.
 
+### Automatic deployment from GitHub
+
+`.github/workflows/tests.yml` is the production release path. Pull requests run
+the Python and frontend checks. A push to `main` publishes only after both test
+jobs pass:
+
+1. Git LFS downloads the browser ONNX model.
+2. `npm ci`, ESLint, and the production build run in GitHub Actions.
+3. The tested `frontend/dist` artifact is uploaded to `dist` in the Hugging Face
+   Space.
+4. The workflow waits for the public static URL to expose the new hashed bundle.
+
+Create a fine-grained Hugging Face token with write access to
+`mohamed00212/RetinaGrade`, then add it to the GitHub repository under
+**Settings > Secrets and variables > Actions** as a repository secret named
+`HF_TOKEN`. Never commit the token to this repository or add it as a frontend
+environment variable.
+
+The deployment job is attached to the GitHub `production` environment, whose
+URL points to the direct static Space address. The workflow uploads only the
+generated static site; training checkpoints, datasets, source reports, and
+other repository content are not transmitted to the Space.
+
 Rebuild the browser model with:
 
 ```bash

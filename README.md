@@ -69,6 +69,7 @@ RetinaGrade/
 - [x] Final locked-test evaluation and calibration
 - [x] Browser class-activation explanation and research guidance
 - [x] Downloadable clinician and patient PDF reports
+- [x] Tested GitHub Actions deployment to the public Hugging Face Space
 
 ## Final test results
 
