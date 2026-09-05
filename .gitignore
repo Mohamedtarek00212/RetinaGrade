@@ -40,6 +40,8 @@ legacy/
 *.egg-info/
 build/
 dist/
+node_modules/
+frontend/dist/
 
 # Model weights
 *.pt

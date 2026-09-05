@@ -72,6 +72,21 @@ data = [
 
 ]
 
+deployment = [
+
+  "fastapi>=0.116",
+
+  "python-multipart>=0.0.20",
+
+  "uvicorn[standard]>=0.35",
+
+]
+onnx = [
+  "onnx>=1.17,<2",
+  "onnxruntime>=1.20,<2",
+  "onnxscript>=0.2,<1",
+]
+
 
 
 [tool.setuptools.packages.find]
@@ -103,4 +118,3 @@ target-version = "py310"
 select = ["E", "F", "I", "UP", "B"]
 
 ignore = ["E501"]
-

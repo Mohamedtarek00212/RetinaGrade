@@ -1,6 +1,21 @@
+---
+title: RetinaGrade
+colorFrom: yellow
+colorTo: green
+sdk: static
+app_build_command: cd frontend && npm ci && npm run build
+app_file: frontend/dist/index.html
+fullWidth: true
+pinned: false
+license: mit
+short_description: Research demo for ordinal diabetic retinopathy grading
+---
+
 # Dual-SwinOrd
 
 A faithful research reproduction of **"Dual-SwinOrd: A Dual-Head Swin Transformer with Semantic Prior Injection for Ordinal Diabetic Retinopathy Grading"**.
+
+**Live demo:** https://huggingface.co/spaces/mohamed00212/RetinaGrade
 
 This repository is a modular, production-quality PyTorch implementation for ordinal diabetic retinopathy grading on the APTOS 2019 dataset. The goal is maximum reproducibility: every algorithmic choice, preprocessing step, loss, and architectural block is taken directly from the paper and is not modified with unpublished improvements.
 
@@ -28,6 +43,7 @@ RetinaGrade/
 │   ├── evaluate.py
 │   └── predict.py
 ├── deployment/              # Single-image inference utilities
+├── frontend/                # React + TypeScript deployment interface
 ├── Presentation/            # Curated final presentation deliverables
 ├── presentation_assets/     # Source archive used to build the presentation
 ├── outputs/                 # Experiment outputs and reports (not committed)
@@ -110,12 +126,20 @@ pytest
 `scripts/train.py`, `scripts/prepare_data.py`, `scripts/evaluate.py`, and
 `scripts/predict.py` are implemented. Explainability remains a future milestone.
 
+The FastAPI backend and React research interface are documented in
+`deployment/README.md` and `frontend/README.md`.
+
+Free browser-based ONNX deployment, plus optional CPU and NVIDIA GPU containers,
+is documented in `docs/deployment.md`.
+
 ### Single-image prediction
 
-After downloading `best.pt` as described below:
+After downloading `best.pt` as described below, export an inference-only copy:
 
 ```bash
-python scripts/predict.py path/to/fundus.png
+python scripts/export_inference_checkpoint.py
+python scripts/predict.py path/to/fundus.png \
+  --checkpoint outputs/checkpoints/deployment/model_inference.pt
 ```
 
 The command prints the predicted grade, class name, confidence, class
@@ -154,8 +178,8 @@ SHA256: 5B979123FDA8179F6DFD59AD45EA0E7CE3D8B6B6DF47CFBA39776528779DF389
 ```
 
 `best.pt` contains the model, optimizer, and scheduler states so training can be
-resumed. A smaller inference-only artifact should be exported when the deployment
-application is implemented.
+resumed. `scripts/export_inference_checkpoint.py` removes the training-only state
+and writes `outputs/checkpoints/deployment/model_inference.pt` for deployment.
 
 ## Git and large-file notes
 

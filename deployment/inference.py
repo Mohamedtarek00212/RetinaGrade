@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 import torch
@@ -10,7 +10,7 @@ import torch
 from src.data.preprocessing.pipeline import PreprocessingPipeline
 from src.data.statistics import NormalizationStats
 from src.models import build_model
-from src.models.config import load_model_config
+from src.models.config import ModelConfig, load_model_config
 from src.models.semantic_prior.text_adapter import HashingTextAdapter
 from src.utils.config import load_data_config
 from src.utils.helpers import read_image_rgb
@@ -33,6 +33,11 @@ class Prediction:
     ordinal_probabilities: list[float]
 
 
+def prepare_inference_config(config: ModelConfig) -> ModelConfig:
+    """Disable pretrained downloads because the checkpoint replaces all weights."""
+    return replace(config, backbone=replace(config.backbone, pretrained=False))
+
+
 class RetinaGradePredictor:
     """Load the trained checkpoint once and predict individual fundus images."""
 
@@ -50,7 +55,7 @@ class RetinaGradePredictor:
             "cpu" if device == "auto" else device
         )
         self.data_config = load_data_config(data_config)
-        architecture = load_model_config(model_config)
+        architecture = prepare_inference_config(load_model_config(model_config))
         stats = NormalizationStats.load(normalization_stats)
         self.transform = PreprocessingPipeline(self.data_config).build("test", stats)
 
@@ -69,6 +74,13 @@ class RetinaGradePredictor:
         state = payload.get("model_state_dict", payload)
         self.model.load_state_dict(state)
         self.model.eval()
+
+    @torch.inference_mode()
+    def warm_up(self) -> None:
+        """Run one synthetic forward pass so the first visitor avoids setup latency."""
+        image_size = self.data_config.preprocessing.image_size
+        tensor = torch.zeros((1, 3, image_size, image_size), device=self.device)
+        self.model(tensor)
 
     @torch.inference_mode()
     def predict(self, image_path: str | Path) -> Prediction:

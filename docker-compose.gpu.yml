@@ -1,0 +1,12 @@
+services:
+  backend:
+    build:
+      context: .
+      target: runtime-gpu
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
