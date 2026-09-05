@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { ChangeEvent, DragEvent, useEffect, useRef, useState } from "react";
 
-import { predictOnDevice } from "./inference/model";
+import { predictOnDevice, prepareOnDeviceModel } from "./inference/model";
 import type { BrowserPrediction, ModelProgress } from "./inference/types";
 import { generateDoctorReport, generatePatientReport } from "./report";
 import type { ReportDetails } from "./report";
@@ -170,6 +170,10 @@ function App() {
     }
     setFile(selected);
     setPreview(URL.createObjectURL(selected));
+    setModelProgress({ label: "Preparing on-device model" });
+    void prepareOnDeviceModel(setModelProgress)
+      .then((runtime) => setModelProgress({ label: `Model ready · ${runtime}` }))
+      .catch(() => setModelProgress({ label: "On-device model" }));
   };
 
   const handleInput = (event: ChangeEvent<HTMLInputElement>) => {

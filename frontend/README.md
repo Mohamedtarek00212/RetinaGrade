@@ -31,9 +31,11 @@ available port during local development. No API server is required.
 
 The approximately 53 MB quantized model is stored at
 `public/models/retinagrade.int8.onnx`. It is downloaded only when the visitor
-starts an analysis, then cached in IndexedDB. ONNX Runtime Web selects WebGPU
-when available and falls back to WebAssembly on CPU. Image preprocessing,
-quality checks, inference, and result calculations all stay on the device.
+selects a valid image, then cached in IndexedDB. Download and runtime preparation
+begin while the user reviews the image, and the cache write does not block
+session creation. ONNX Runtime Web selects WebGPU when available and falls back
+to WebAssembly on CPU. Image preprocessing, quality checks, inference, and
+result calculations all stay on the device.
 The explanation map is generated in the same model pass, so it does not require
 another upload or a separate server request.
 

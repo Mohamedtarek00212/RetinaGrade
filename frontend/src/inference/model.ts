@@ -80,7 +80,7 @@ async function downloadModel(onProgress: (progress: ModelProgress) => void) {
     bytes.set(chunk, offset);
     offset += chunk.byteLength;
   }
-  await cacheModel(bytes.buffer);
+  void cacheModel(bytes.buffer);
   return bytes.buffer;
 }
 
@@ -109,6 +109,23 @@ async function createSession(onProgress: (progress: ModelProgress) => void): Pro
   return { session, runtime: "CPU" };
 }
 
+function getRuntimeSession(onProgress: (progress: ModelProgress) => void) {
+  if (!sessionPromise) {
+    sessionPromise = createSession(onProgress).catch((error) => {
+      sessionPromise = null;
+      throw error;
+    });
+  }
+  return sessionPromise;
+}
+
+export async function prepareOnDeviceModel(
+  onProgress: (progress: ModelProgress) => void,
+): Promise<RuntimeSession["runtime"]> {
+  const { runtime } = await getRuntimeSession(onProgress);
+  return runtime;
+}
+
 function softmax(values: readonly number[]) {
   const maximum = Math.max(...values);
   const exponentials = values.map((value) => Math.exp(value - maximum));
@@ -124,15 +141,12 @@ export async function predictOnDevice(
   file: File,
   onProgress: (progress: ModelProgress) => void,
 ): Promise<BrowserPrediction> {
+  const runtimeSession = getRuntimeSession(onProgress);
   onProgress({ label: "Processing image" });
-  const { tensor, quality, explanationCanvas } = await preprocessImage(file);
-  if (!sessionPromise) {
-    sessionPromise = createSession(onProgress).catch((error) => {
-      sessionPromise = null;
-      throw error;
-    });
-  }
-  const { session, runtime } = await sessionPromise;
+  const [{ tensor, quality, explanationCanvas }, { session, runtime }] = await Promise.all([
+    preprocessImage(file),
+    runtimeSession,
+  ]);
   onProgress({ label: `Analyzing on ${runtime}` });
 
   const startedAt = performance.now();

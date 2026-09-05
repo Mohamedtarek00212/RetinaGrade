@@ -86,6 +86,12 @@ IndexedDB, and runs inference entirely inside the visitor's browser. It tries
 WebGPU first and falls back to WebAssembly CPU execution. Uploaded images never
 leave the device, and no paid backend is required.
 
+Model preparation starts as soon as a valid image is selected. This overlaps
+the model download and WebGPU/WASM session creation with the user's image review
+time. Image preprocessing also runs concurrently with any remaining session
+preparation when analysis starts, and IndexedDB persistence happens in the
+background rather than delaying the first inference.
+
 ### Automatic deployment from GitHub
 
 `.github/workflows/tests.yml` is the production release path. Pull requests run
