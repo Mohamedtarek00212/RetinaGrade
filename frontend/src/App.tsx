@@ -2,12 +2,15 @@ import {
   Activity,
   AlertCircle,
   BarChart3,
+  Camera,
   CheckCircle2,
   CircleHelp,
   Clock3,
+  Eye,
   GitCompareArrows,
   ImagePlus,
   LockKeyhole,
+  Lightbulb,
   LoaderCircle,
   RotateCcw,
   ScanLine,
@@ -22,6 +25,7 @@ import type { BrowserPrediction, ModelProgress } from "./inference/types";
 
 const ACCEPTED_TYPES = ["image/png", "image/jpeg"];
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
+type ResultView = "summary" | "explanation" | "thresholds";
 
 const GRADE_DETAILS = [
   { short: "No DR", description: "No visible diabetic retinopathy" },
@@ -43,6 +47,52 @@ function confidenceBand(confidence: number) {
   return { label: "Low", note: "The prediction is uncertain across multiple grades." };
 }
 
+function guidanceFor(prediction: BrowserPrediction) {
+  const guidance: { title: string; text: string; kind: "quality" | "review" | "screening" }[] = [];
+  if (prediction.quality.warnings.length > 0) {
+    guidance.push({
+      title: "Consider another capture",
+      text: "The quality checks found a possible limitation. A sharper, evenly illuminated fundus image may produce a more dependable model output.",
+      kind: "quality",
+    });
+  } else {
+    guidance.push({
+      title: "Image quality accepted",
+      text: "The automated checks accepted the image for size, exposure, visible area, and retinal color profile.",
+      kind: "quality",
+    });
+  }
+
+  if (prediction.assessment_status === "review_recommended") {
+    guidance.push({
+      title: "Model result is uncertain",
+      text: "Nearby grades have similar probabilities. Do not use this output to make a care decision; obtain professional review.",
+      kind: "review",
+    });
+  } else {
+    guidance.push({
+      title: "Clear model preference",
+      text: "The leading grade is separated from the alternatives, but confidence describes model consistency rather than guaranteed correctness.",
+      kind: "review",
+    });
+  }
+
+  guidance.push(
+    prediction.grade === 0
+      ? {
+          title: "Continue routine eye care",
+          text: "No DR is the model's leading class. This does not rule out disease or replace the eye examinations recommended by a qualified professional.",
+          kind: "screening",
+        }
+      : {
+          title: "Professional review is appropriate",
+          text: "The model favored a non-zero DR grade. A qualified eye-care professional must evaluate the image; this research demo cannot determine diagnosis or urgency.",
+          kind: "screening",
+        },
+  );
+  return guidance;
+}
+
 function App() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -54,7 +104,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isPredicting, setIsPredicting] = useState(false);
-  const [resultView, setResultView] = useState<"summary" | "thresholds">("summary");
+  const [resultView, setResultView] = useState<ResultView>("summary");
 
   const derived = prediction
     ? (() => {
@@ -311,10 +361,18 @@ function App() {
                   <button
                     type="button"
                     role="tab"
+                    aria-selected={resultView === "explanation"}
+                    onClick={() => setResultView("explanation")}
+                  >
+                    Explanation
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
                     aria-selected={resultView === "thresholds"}
                     onClick={() => setResultView("thresholds")}
                   >
-                    Threshold details
+                    Thresholds
                   </button>
                 </div>
 
@@ -399,6 +457,62 @@ function App() {
                       </div>
                     )}
                   </>
+                ) : resultView === "explanation" && derived ? (
+                  <div className="explanation-section">
+                    <div className="section-label">
+                      <span>Class activation map</span>
+                      <Eye size={16} />
+                    </div>
+                    <figure className="focus-figure">
+                      <img
+                        src={prediction.explanation.image_url}
+                        alt={`Model contribution map for the Grade ${prediction.grade} prediction`}
+                      />
+                      <figcaption>
+                        <div className="focus-legend" aria-label="Contribution intensity scale">
+                          <span>Lower contribution</span>
+                          <i />
+                          <span>Higher contribution</span>
+                        </div>
+                        <p>
+                          Warmer areas contributed more strongly to the selected classification.
+                          This map does not identify lesions or confirm disease.
+                        </p>
+                      </figcaption>
+                    </figure>
+
+                    <div className="explanation-copy">
+                      <div className="section-label">
+                        <span>Why the model chose this grade</span>
+                        <Lightbulb size={16} />
+                      </div>
+                      <p>
+                        Grade {prediction.grade} ({GRADE_DETAILS[prediction.grade].short}) received{" "}
+                        {(prediction.confidence * 100).toFixed(1)}% probability. The closest
+                        alternative was Grade {derived.alternative.grade} ({GRADE_DETAILS[derived.alternative.grade].short}) at{" "}
+                        {(derived.alternative.probability * 100).toFixed(1)}%, producing a{" "}
+                        {(prediction.confidence_margin * 100).toFixed(1)}% top-two margin.
+                      </p>
+                    </div>
+
+                    <div className="guidance-section">
+                      <div className="section-label">
+                        <span>Research guidance</span>
+                        <Camera size={16} />
+                      </div>
+                      <div className="guidance-list">
+                        {guidanceFor(prediction).map((item) => (
+                          <div className={`guidance-item ${item.kind}`} key={item.title}>
+                            {item.kind === "quality" ? <Camera size={17} /> : item.kind === "review" ? <Lightbulb size={17} /> : <ShieldAlert size={17} />}
+                            <span>
+                              <strong>{item.title}</strong>
+                              <small>{item.text}</small>
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 ) : (
                   <>
                     <div className="ordinal-section">

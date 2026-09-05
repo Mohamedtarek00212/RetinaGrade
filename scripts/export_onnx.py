@@ -16,20 +16,44 @@ from torch import Tensor, nn
 from deployment.inference import DEFAULT_TEXT_PROMPTS, prepare_inference_config
 from src.models import build_model
 from src.models.config import load_model_config
+from src.models.neck.shared_feature_neck import GlobalAveragePooling
 from src.models.semantic_prior.text_adapter import HashingTextAdapter
 from src.utils.config import load_data_config
 
 
 class BrowserExportModel(nn.Module):
-    """Expose only the two tensors consumed by the browser interface."""
+    """Expose predictions and a class-specific spatial contribution map."""
 
     def __init__(self, model: nn.Module) -> None:
         super().__init__()
         self.model = model
+        if not isinstance(self.model.neck.pooling, GlobalAveragePooling):
+            raise ValueError("class activation export requires global average pooling")
+        if not isinstance(self.model.neck.activation, nn.Identity):
+            raise ValueError("class activation export requires an identity neck activation")
+        if self.model.neck.dropout.p != 0:
+            raise ValueError("class activation export requires zero neck dropout")
+        classifier_weight = self.model.dual_head.classification_head.linear.weight
+        neck_weight = self.model.neck.fc.weight
+        with torch.no_grad():
+            spatial_class_weights = (classifier_weight @ neck_weight).detach()
+        self.register_buffer(
+            "_spatial_class_weights",
+            spatial_class_weights,
+            persistent=True,
+        )
 
-    def forward(self, image: Tensor) -> tuple[Tensor, Tensor]:
+    def forward(self, image: Tensor) -> tuple[Tensor, Tensor, Tensor]:
         outputs = self.model(image)
-        return outputs["classification_logits"], outputs["ordinal_logits"]
+        classification_logits = outputs["classification_logits"]
+        spatial_features = outputs["spatial_features"]
+        predicted_grades = classification_logits.argmax(dim=1)
+        selected_weights = self._spatial_class_weights[predicted_grades, :, None, None]
+        activation_map = torch.relu((spatial_features * selected_weights).sum(dim=1, keepdim=True))
+        minimum = activation_map.amin(dim=(2, 3), keepdim=True)
+        maximum = activation_map.amax(dim=(2, 3), keepdim=True)
+        activation_map = (activation_map - minimum) / (maximum - minimum + 1e-6)
+        return classification_logits, outputs["ordinal_logits"], activation_map
 
 
 def quantize_conv_weights(source: Path, output: Path) -> None:
@@ -141,7 +165,7 @@ def main() -> None:
         (sample,),
         full_precision,
         input_names=["image"],
-        output_names=["classification_logits", "ordinal_logits"],
+        output_names=["classification_logits", "ordinal_logits", "activation_map"],
         opset_version=18,
         dynamo=True,
         external_data=False,

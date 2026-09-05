@@ -1,9 +1,10 @@
 import * as ort from "onnxruntime-web/webgpu";
 
+import { renderActivationOverlay } from "./explanation";
 import { preprocessImage } from "./preprocess";
 import type { BrowserPrediction, ModelProgress } from "./types";
 
-const MODEL_VERSION = "retinagrade-int8-v2";
+const MODEL_VERSION = "retinagrade-int8-v3-cam";
 const MODEL_URL = `${import.meta.env.BASE_URL}models/retinagrade.int8.onnx`;
 const MODEL_DB = "retinagrade-model-cache";
 const STORE = "models";
@@ -124,7 +125,7 @@ export async function predictOnDevice(
   onProgress: (progress: ModelProgress) => void,
 ): Promise<BrowserPrediction> {
   onProgress({ label: "Processing image" });
-  const { tensor, quality } = await preprocessImage(file);
+  const { tensor, quality, explanationCanvas } = await preprocessImage(file);
   if (!sessionPromise) {
     sessionPromise = createSession(onProgress).catch((error) => {
       sessionPromise = null;
@@ -139,6 +140,18 @@ export async function predictOnDevice(
   const inferenceMs = performance.now() - startedAt;
   const classificationLogits = Array.from(outputs.classification_logits.data as Float32Array);
   const ordinalLogits = Array.from(outputs.ordinal_logits.data as Float32Array);
+  const activationMap = outputs.activation_map;
+  if (!activationMap || activationMap.dims.length < 2) {
+    throw new Error("The model did not return an explanation map.");
+  }
+  const mapHeight = Number(activationMap.dims.at(-2));
+  const mapWidth = Number(activationMap.dims.at(-1));
+  const explanationImageUrl = renderActivationOverlay(
+    explanationCanvas,
+    activationMap.data as Float32Array,
+    mapWidth,
+    mapHeight,
+  );
   const probabilities = softmax(classificationLogits);
   const ordinalProbabilities = ordinalLogits.map(sigmoid);
   const grade = probabilities.indexOf(Math.max(...probabilities));
@@ -159,5 +172,11 @@ export async function predictOnDevice(
     inference_ms: inferenceMs,
     quality,
     runtime,
+    explanation: {
+      image_url: explanationImageUrl,
+      map_width: mapWidth,
+      map_height: mapHeight,
+      method: "class_activation_map",
+    },
   };
 }

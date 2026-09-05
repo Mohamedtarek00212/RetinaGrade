@@ -103,6 +103,25 @@ all 15 curated grade-balanced samples, with a maximum class-probability change
 of 0.0169. This small compatibility set does not replace a full validation/test
 evaluation when the original image corpus is available.
 
+## Browser explanation output
+
+The ONNX graph also returns a class activation map for the predicted grade. The
+model uses global average pooling followed by a linear neck and classification
+head, so export combines the two linear weight matrices and applies the selected
+class weights to the final PLKA spatial feature map. ReLU and per-image min-max
+normalization produce the displayed contribution overlay in the same inference
+pass.
+
+The map is an explanation of the model's spatial contribution, not lesion
+localization or a diagnosis. The interface therefore presents it alongside the
+top-two probability margin, image-quality findings, and conservative guidance
+to seek qualified eye-care review when the output is uncertain or non-zero.
+
+The explanation-enabled model retained identical classification logits and
+top-1 predictions against the previous browser model on all 15 curated samples.
+Every tested activation map had a normalized range from 0 to 1 and non-zero
+spatial variation.
+
 ## Container production settings
 
 - Serve port `8080` behind the hosting platform's HTTPS proxy.

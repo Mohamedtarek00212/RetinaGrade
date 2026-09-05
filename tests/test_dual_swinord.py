@@ -74,13 +74,20 @@ def test_build_model_end_to_end_forward_pass(non_paper_model_config: ModelConfig
     assert outputs["classification_logits"].shape == (batch_size, num_classes)
     assert outputs["ordinal_logits"].shape == (batch_size, num_classes - 1)
     assert outputs["shared_embedding"].shape == (batch_size, non_paper_model_config.neck.hidden_dim)
+    assert outputs["spatial_features"].ndim == 4
+    assert outputs["spatial_features"].shape[0] == batch_size
     assert not torch.isnan(outputs["classification_logits"]).any()
     assert not torch.isnan(outputs["ordinal_logits"]).any()
 
 
 def test_build_model_leaves_global_registries_unchanged(non_paper_model_config: ModelConfig) -> None:
     """The production registries must not gain or lose keys from test doubles."""
-    from src.models import ORDINAL_HEAD_REGISTRY, PLKA_FUSION_REGISTRY, SPM_REGISTRY, NECK_POOLING_REGISTRY
+    from src.models import (
+        NECK_POOLING_REGISTRY,
+        ORDINAL_HEAD_REGISTRY,
+        PLKA_FUSION_REGISTRY,
+        SPM_REGISTRY,
+    )
 
     before = {
         "spm": set(SPM_REGISTRY.available()),

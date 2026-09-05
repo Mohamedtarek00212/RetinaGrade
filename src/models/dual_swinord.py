@@ -86,10 +86,9 @@ class DualSwinOrd(nn.Module):
 
         Returns:
             ``{"classification_logits": [B, K], "ordinal_logits": [B, K-1],
-            "shared_embedding": [B, hidden_dim]}``. Intermediate tensors
-            are not discarded from this dict so that a future Grad-CAM/SHAP
-            consumer (out of scope for this milestone) is not forced to
-            retrofit hooks into a finished model.
+            "shared_embedding": [B, hidden_dim],
+            "spatial_features": [B, C, Hf, Wf]}``. The final PLKA feature map
+            is retained for class-activation explanations without hooks.
         """
         stage_features = list(self.backbone(x))
         stage_features[self.spm_inject_at_stage] = self.spm(
@@ -100,4 +99,8 @@ class DualSwinOrd(nn.Module):
         shared_embedding = self.neck(plka_output)
         head_outputs = self.dual_head(shared_embedding)
 
-        return {**head_outputs, "shared_embedding": shared_embedding}
+        return {
+            **head_outputs,
+            "shared_embedding": shared_embedding,
+            "spatial_features": plka_output,
+        }

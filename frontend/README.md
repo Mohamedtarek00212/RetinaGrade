@@ -5,8 +5,10 @@ entirely inside the browser. The visual tokens follow `docs/design-system.md`.
 
 The result workspace presents class probabilities, referable-DR likelihood,
 probability-weighted expected grade, confidence margin, ordinal thresholds,
-image-quality feedback, and measured inference time. These are model-derived
-research outputs and are explicitly not presented as clinical decisions.
+image-quality feedback, measured inference time, and a class activation map.
+The explanation view overlays the areas that contributed most strongly to the
+selected class and pairs them with confidence-aware research guidance. It does
+not identify lesions, establish a diagnosis, or determine clinical urgency.
 
 ## Local development
 
@@ -26,6 +28,8 @@ The approximately 53 MB quantized model is stored at
 starts an analysis, then cached in IndexedDB. ONNX Runtime Web selects WebGPU
 when available and falls back to WebAssembly on CPU. Image preprocessing,
 quality checks, inference, and result calculations all stay on the device.
+The explanation map is generated in the same model pass, so it does not require
+another upload or a separate server request.
 
 ## Production build
 

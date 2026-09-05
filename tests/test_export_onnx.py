@@ -4,11 +4,64 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+import torch
+from torch import Tensor, nn
 
 onnx = pytest.importorskip("onnx")
 from onnx import TensorProto, helper, numpy_helper  # noqa: E402
 
-from scripts.export_onnx import quantize_conv_weights  # noqa: E402
+from scripts.export_onnx import BrowserExportModel, quantize_conv_weights  # noqa: E402
+from src.models import ClassificationHead, DualHead, IndependentOrdinalHead  # noqa: E402
+from src.models.neck.shared_feature_neck import (  # noqa: E402
+    GlobalAveragePooling,
+    SharedFeatureNeck,
+)
+
+
+class _SpatialFixtureModel(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.neck = SharedFeatureNeck(
+            pooling=GlobalAveragePooling(),
+            in_channels=2,
+            hidden_dim=2,
+            dropout=0.0,
+            activation_factory=nn.Identity,
+        )
+        self.dual_head = DualHead(
+            ClassificationHead(hidden_dim=2, num_classes=2),
+            IndependentOrdinalHead(hidden_dim=2, num_classes=2),
+        )
+
+    def forward(self, image: Tensor) -> dict[str, Tensor]:
+        embedding = self.neck(image)
+        return {
+            **self.dual_head(embedding),
+            "shared_embedding": embedding,
+            "spatial_features": image,
+        }
+
+
+def test_browser_export_returns_selected_class_activation_map() -> None:
+    model = _SpatialFixtureModel()
+    with torch.no_grad():
+        model.neck.fc.weight.copy_(torch.eye(2))
+        model.neck.fc.bias.zero_()
+        model.dual_head.classification_head.linear.weight.copy_(torch.eye(2))
+        model.dual_head.classification_head.linear.bias.zero_()
+        model.dual_head.ordinal_head.linear.weight.zero_()
+        model.dual_head.ordinal_head.linear.bias.zero_()
+
+    image = torch.tensor([[[[1.0, 2.0], [3.0, 4.0]], [[0.0, 0.0], [0.0, 0.0]]]])
+    logits, _, activation = BrowserExportModel(model)(image)
+
+    assert logits.argmax(dim=1).item() == 0
+    torch.testing.assert_close(
+        activation,
+        torch.tensor([[[[0.0, 1 / 3], [2 / 3, 1.0]]]]),
+        atol=1e-5,
+        rtol=0,
+    )
 
 
 def test_quantize_conv_weights_uses_per_channel_int8(tmp_path: Path) -> None:

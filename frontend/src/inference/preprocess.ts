@@ -142,7 +142,11 @@ function majorityFilter(mask: Uint8Array, width: number, height: number) {
   return filtered;
 }
 
-export async function preprocessImage(file: File): Promise<{ tensor: Float32Array; quality: ImageQuality }> {
+export async function preprocessImage(file: File): Promise<{
+  tensor: Float32Array;
+  quality: ImageQuality;
+  explanationCanvas: HTMLCanvasElement;
+}> {
   const bitmap = await createImageBitmap(file);
   const width = bitmap.width;
   const height = bitmap.height;
@@ -253,5 +257,5 @@ export async function preprocessImage(file: File): Promise<{ tensor: Float32Arra
     tensor[plane * 2 + index] = (resized[pixel + 2] / 255 - MEAN[2]) / STD[2];
   }
 
-  return { tensor, quality };
+  return { tensor, quality, explanationCanvas: resizedCanvas };
 }

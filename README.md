@@ -67,7 +67,8 @@ RetinaGrade/
 - [x] Classification, ordinal, and combined training losses (Eq. 7-9; see `docs/milestone_04_paper_gaps.md`)
 - [x] Training loop and per-epoch validation (`src/training/trainer.py`); hyperparameter search is not implemented -- the paper reports one fixed hyperparameter set (`configs/training.yaml`), not a search
 - [x] Final locked-test evaluation and calibration
-- [ ] Explainability (Grad-CAM/SHAP) and report generation
+- [x] Browser class-activation explanation and research guidance
+- [ ] Downloadable report generation
 
 ## Final test results
 
@@ -124,7 +125,10 @@ pytest
 ```
 
 `scripts/train.py`, `scripts/prepare_data.py`, `scripts/evaluate.py`, and
-`scripts/predict.py` are implemented. Explainability remains a future milestone.
+`scripts/predict.py` are implemented. The browser application also returns a
+class-specific activation map with confidence context and conservative research
+guidance. The map shows spatial contribution to the selected class; it is not a
+lesion detector or a clinical explanation.
 
 The FastAPI backend and React research interface are documented in
 `deployment/README.md` and `frontend/README.md`.

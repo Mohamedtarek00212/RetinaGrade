@@ -20,6 +20,12 @@ export type BrowserPrediction = {
   inference_ms: number;
   quality: ImageQuality;
   runtime: "WebGPU" | "CPU";
+  explanation: {
+    image_url: string;
+    map_width: number;
+    map_height: number;
+    method: "class_activation_map";
+  };
 };
 
 export type ModelProgress = {
