@@ -93,8 +93,15 @@ python -m pip install -e ".[onnx]"
 python scripts/export_onnx.py
 ```
 
-Only `MatMul` and `Gemm` weights are quantized. Quantizing convolution operators
-produces `ConvInteger` nodes that are not portable across all ONNX runtimes.
+`MatMul` and `Gemm` weights use ONNX Runtime dynamic quantization. Convolution
+weights use per-channel INT8 storage followed by `DequantizeLinear`, which keeps
+activations in FP32 and avoids the poorly supported `ConvInteger` operator.
+
+The convolution weight pass reduces the browser artifact from 100.0 MiB to
+52.8 MiB. A local compatibility benchmark retained the same top-1 prediction on
+all 15 curated grade-balanced samples, with a maximum class-probability change
+of 0.0169. This small compatibility set does not replace a full validation/test
+evaluation when the original image corpus is available.
 
 ## Container production settings
 

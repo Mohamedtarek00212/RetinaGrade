@@ -21,7 +21,7 @@ npm run dev
 Vite uses `http://127.0.0.1:5173` by default and automatically selects the next
 available port during local development. No API server is required.
 
-The quantized model is stored at
+The approximately 53 MB quantized model is stored at
 `public/models/retinagrade.int8.onnx`. It is downloaded only when the visitor
 starts an analysis, then cached in IndexedDB. ONNX Runtime Web selects WebGPU
 when available and falls back to WebAssembly on CPU. Image preprocessing,

@@ -9,6 +9,7 @@ import numpy as np
 import onnx
 import onnxruntime as ort
 import torch
+from onnx import helper, numpy_helper
 from onnxruntime.quantization import QuantType, quantize_dynamic
 from torch import Tensor, nn
 
@@ -31,6 +32,69 @@ class BrowserExportModel(nn.Module):
         return outputs["classification_logits"], outputs["ordinal_logits"]
 
 
+def quantize_conv_weights(source: Path, output: Path) -> None:
+    """Store Conv weights as per-channel INT8 while keeping activations in FP32."""
+    model = onnx.load(source)
+    initializers = {value.name: value for value in model.graph.initializer}
+    removed = []
+    added = []
+    dequantizers = []
+
+    for node in model.graph.node:
+        if node.op_type != "Conv" or node.input[1] not in initializers:
+            continue
+
+        weight_proto = initializers[node.input[1]]
+        weight = numpy_helper.to_array(weight_proto)
+        reduction_axes = tuple(range(1, weight.ndim))
+        scale = np.max(np.abs(weight), axis=reduction_axes).astype(np.float32) / 127.0
+        scale = np.maximum(scale, np.finfo(np.float32).eps)
+        broadcast_shape = (weight.shape[0],) + (1,) * (weight.ndim - 1)
+        quantized = np.clip(
+            np.rint(weight / scale.reshape(broadcast_shape)),
+            -127,
+            127,
+        ).astype(np.int8)
+
+        quantized_name = f"{weight_proto.name}_quantized"
+        scale_name = f"{weight_proto.name}_scale"
+        zero_name = f"{weight_proto.name}_zero_point"
+        dequantized_name = f"{weight_proto.name}_dequantized"
+        added.extend(
+            [
+                numpy_helper.from_array(quantized, quantized_name),
+                numpy_helper.from_array(scale, scale_name),
+                numpy_helper.from_array(
+                    np.zeros(weight.shape[0], dtype=np.int8),
+                    zero_name,
+                ),
+            ]
+        )
+        dequantizers.append(
+            helper.make_node(
+                "DequantizeLinear",
+                [quantized_name, scale_name, zero_name],
+                [dequantized_name],
+                axis=0,
+                name=f"{node.name or weight_proto.name}_weight_dequantize",
+            )
+        )
+        node.input[1] = dequantized_name
+        removed.append(weight_proto)
+
+    if not removed:
+        raise ValueError("ONNX graph does not contain constant Conv weights")
+
+    for value in removed:
+        model.graph.initializer.remove(value)
+    model.graph.initializer.extend(added)
+    original_nodes = list(model.graph.node)
+    del model.graph.node[:]
+    model.graph.node.extend(dequantizers + original_nodes)
+    onnx.checker.check_model(model)
+    onnx.save(model, output)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -51,6 +115,7 @@ def main() -> None:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     full_precision = args.output.with_name("retinagrade.fp32.onnx")
     quantization_source = args.output.with_name("retinagrade.quant-source.onnx")
+    matmul_quantized = args.output.with_name("retinagrade.matmul-int8.onnx")
 
     data_config = load_data_config("configs/data.yaml")
     architecture = prepare_inference_config(load_model_config("configs/model.yaml"))
@@ -88,12 +153,14 @@ def main() -> None:
     onnx.save(quantization_model, quantization_source)
     quantize_dynamic(
         quantization_source,
-        args.output,
+        matmul_quantized,
         op_types_to_quantize=["MatMul", "Gemm"],
         weight_type=QuantType.QInt8,
         per_channel=True,
     )
+    quantize_conv_weights(matmul_quantized, args.output)
     quantization_source.unlink(missing_ok=True)
+    matmul_quantized.unlink(missing_ok=True)
 
     with torch.inference_mode():
         expected = wrapper(sample)

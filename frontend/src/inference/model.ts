@@ -3,7 +3,7 @@ import * as ort from "onnxruntime-web/webgpu";
 import { preprocessImage } from "./preprocess";
 import type { BrowserPrediction, ModelProgress } from "./types";
 
-const MODEL_VERSION = "retinagrade-int8-v1";
+const MODEL_VERSION = "retinagrade-int8-v2";
 const MODEL_URL = `${import.meta.env.BASE_URL}models/retinagrade.int8.onnx`;
 const MODEL_DB = "retinagrade-model-cache";
 const STORE = "models";
