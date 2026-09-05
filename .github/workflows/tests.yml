@@ -111,7 +111,7 @@ jobs:
           for attempt in $(seq 1 20); do
             public_html="$(curl -fsSL "$PUBLIC_URL/?deploy=$GITHUB_SHA" || true)"
             if grep -Fq "$expected_asset" <<< "$public_html"; then
-              curl -fsSLI "$PUBLIC_URL/$expected_asset" >/dev/null
+              curl -fsSL "$PUBLIC_URL/$expected_asset" -o /dev/null
               echo "Verified public asset: $expected_asset"
               exit 0
             fi
