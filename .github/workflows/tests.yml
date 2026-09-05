@@ -1,9 +1,17 @@
-name: tests
+name: CI and deployment
 
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: retinagrade-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   pytest:
@@ -18,3 +26,98 @@ jobs:
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[dev]"
       - run: pytest
+
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          lfs: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Lint frontend
+        working-directory: frontend
+        run: npm run lint
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+      - name: Verify deployment bundle
+        run: |
+          test -s frontend/dist/index.html
+          test "$(wc -c < frontend/dist/models/retinagrade.int8.onnx)" -gt 50000000
+          grep -q 'assets/index-.*\.js' frontend/dist/index.html
+      - uses: actions/upload-artifact@v4
+        with:
+          name: retinagrade-static-site
+          path: frontend/dist
+          if-no-files-found: error
+          retention-days: 7
+
+  deploy:
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
+    needs: [pytest, frontend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: https://mohamed00212-retinagrade.static.hf.space/
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          name: retinagrade-static-site
+          path: frontend/dist
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Install Hugging Face client
+        run: pip install "huggingface_hub>=0.36,<2"
+      - name: Publish tested bundle to Hugging Face Spaces
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          test -n "$HF_TOKEN" || {
+            echo "Missing repository secret: HF_TOKEN" >&2
+            exit 1
+          }
+          python - <<'PY'
+          import os
+
+          from huggingface_hub import HfApi
+
+          sha = os.environ["GITHUB_SHA"]
+          commit = HfApi(token=os.environ["HF_TOKEN"]).upload_folder(
+              repo_id="mohamed00212/RetinaGrade",
+              repo_type="space",
+              folder_path="frontend/dist",
+              path_in_repo="dist",
+              commit_message=f"Deploy GitHub commit {sha[:7]}",
+          )
+          print(f"Published Hugging Face commit: {commit.commit_url}")
+          PY
+      - name: Verify public deployment
+        env:
+          PUBLIC_URL: https://mohamed00212-retinagrade.static.hf.space
+        run: |
+          expected_asset="$(grep -o 'assets/index-[^\"]*\.js' frontend/dist/index.html | head -n 1)"
+          test -n "$expected_asset"
+
+          for attempt in $(seq 1 20); do
+            public_html="$(curl -fsSL "$PUBLIC_URL/?deploy=$GITHUB_SHA" || true)"
+            if grep -Fq "$expected_asset" <<< "$public_html"; then
+              curl -fsSLI "$PUBLIC_URL/$expected_asset" >/dev/null
+              echo "Verified public asset: $expected_asset"
+              exit 0
+            fi
+            echo "Waiting for the Space CDN ($attempt/20)..."
+            sleep 10
+          done
+
+          echo "The public Space did not expose the expected bundle in time." >&2
+          exit 1
