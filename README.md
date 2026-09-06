@@ -11,139 +11,188 @@ license: mit
 short_description: Research demo for ordinal diabetic retinopathy grading
 ---
 
-# Dual-SwinOrd
+<h1 align="center">RetinaGrade</h1>
 
-A faithful research reproduction of **"Dual-SwinOrd: A Dual-Head Swin Transformer with Semantic Prior Injection for Ordinal Diabetic Retinopathy Grading"**.
+<p align="center">
+  An on-device research application for five-grade diabetic retinopathy assessment using Dual-SwinOrd.
+</p>
 
-**Live demo:** https://huggingface.co/spaces/mohamed00212/RetinaGrade
+<p align="center">
+  <a href="https://mohamed00212-retinagrade.static.hf.space/"><img src="https://img.shields.io/badge/Live_demo-open-159c89?style=flat-square" alt="Live demo"></a>
+  <a href="https://github.com/Mohamedtarek00212/RetinaGrade/actions/workflows/tests.yml"><img src="https://github.com/Mohamedtarek00212/RetinaGrade/actions/workflows/tests.yml/badge.svg" alt="CI and deployment"></a>
+  <img src="https://img.shields.io/badge/Test_accuracy-86.84%25-df7842?style=flat-square" alt="Test accuracy 86.84 percent">
+  <img src="https://img.shields.io/badge/Test_QWK-0.9074-3aa89b?style=flat-square" alt="Test QWK 0.9074">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-555?style=flat-square" alt="MIT license"></a>
+</p>
 
-This repository is a modular, production-quality PyTorch implementation for ordinal diabetic retinopathy grading on the APTOS 2019 dataset. The goal is maximum reproducibility: every algorithmic choice, preprocessing step, loss, and architectural block is taken directly from the paper and is not modified with unpublished improvements.
+<p align="center">
+  <a href="https://mohamed00212-retinagrade.static.hf.space/">
+    <img src="docs/assets/retinagrade-live-demo.jpg" alt="RetinaGrade analyzing a retinal fundus image in the browser" width="100%">
+  </a>
+</p>
 
-## Repository layout
+> [!IMPORTANT]
+> RetinaGrade is a research and education project, not a medical device. Its
+> output must not be used for diagnosis, triage, or treatment decisions.
+
+## Overview
+
+RetinaGrade reproduces the Dual-SwinOrd approach for ordinal diabetic
+retinopathy grading on the APTOS 2019 dataset. The repository covers the full
+research path: data validation, preprocessing, model architecture, training,
+locked-test evaluation, ONNX export, browser inference, visual explanation,
+professional PDF reporting, and automated deployment.
+
+The public application performs inference inside the visitor's browser. A
+fundus image is preprocessed locally, passed to a quantized ONNX model, and
+converted into a five-class probability distribution, ordinal thresholds, and
+a class activation map. The uploaded image and report details never leave the
+device.
+
+**[Try the public application](https://mohamed00212-retinagrade.static.hf.space/)**
+
+## Highlights
+
+- Five-grade classification: No DR, Mild, Moderate, Severe, and PDR.
+- Dual-head learning with categorical and ordinal objectives.
+- Swin Transformer backbone with semantic prior injection and PLKA attention.
+- Image-quality checks before inference.
+- Class probabilities, expected grade, top-two margin, and referable-DR score.
+- Class activation map with explicit explanation limitations.
+- WebGPU acceleration with automatic WebAssembly CPU fallback.
+- Approximately 53 MB quantized browser model cached in IndexedDB.
+- Separate clinician review and patient information PDF reports.
+- GitHub Actions testing, build verification, and automatic Hugging Face deploy.
+
+## Results
+
+The checkpoint was selected at epoch 24 using validation QWK. The 342-image
+test split remained locked until final evaluation and did not influence model
+selection.
+
+| Metric | Validation | Locked test |
+|---|---:|---:|
+| Accuracy | 85.17% | **86.84%** |
+| Quadratic Weighted Kappa | **0.9177** | **0.9074** |
+| Macro F1 | 69.59% | 67.83% |
+| Mean Absolute Error | 0.1860 | 0.1784 |
+| Within-one-grade accuracy | 97.09% | 96.20% |
+| Referable DR AUC | - | 98.18% |
+| Referable DR false-negative rate | - | 3.42% |
+
+<p align="center">
+  <img src="presentation_assets/charts/confusion_matrix.png" alt="RetinaGrade confusion matrix" width="49%">
+  <img src="presentation_assets/charts/reliability_diagram.png" alt="RetinaGrade reliability diagram" width="49%">
+</p>
+
+Class imbalance remains visible in the Severe DR class. Macro F1 and per-class
+results should therefore be considered alongside overall accuracy and QWK.
+
+## System Flow
+
+```mermaid
+flowchart LR
+    A[Fundus image] --> B[Quality checks]
+    B --> C[Crop, resize, normalize]
+    C --> D[Swin Transformer]
+    D --> E[Semantic prior + PLKA]
+    E --> F[Classification head]
+    E --> G[Ordinal head]
+    F --> H[Grade probabilities]
+    G --> I[Ordinal thresholds]
+    E --> J[Class activation map]
+    H --> K[Research assessment]
+    I --> K
+    J --> K
+    K --> L[Clinician and patient PDFs]
+```
+
+The web client begins downloading and preparing the model as soon as a valid
+image is selected. Image preprocessing and any remaining runtime preparation
+then proceed concurrently. IndexedDB persistence runs in the background so the
+first inference does not wait for the cache write.
+
+## Browser Application
+
+The React and TypeScript interface provides three result views:
+
+| View | Information |
+|---|---|
+| Summary | Grade, confidence, full distribution, referable probability, expected grade, and closest alternative |
+| Explanation | Original image, contribution overlay, interpretation boundaries, and research guidance |
+| Thresholds | Four ordinal probabilities used to reason across the ordered grade scale |
+
+The PDF workspace creates two documents entirely in the browser:
+
+- **Clinician review report:** model outputs, quality findings, activation map,
+  notes, and review sign-off.
+- **Patient information summary:** plain-language wording and only the next
+  steps approved by the reviewing clinician.
+
+The patient document requires clinician confirmation. Neither report turns the
+research prediction into an automated care decision.
+
+## Repository Layout
 
 ```text
 RetinaGrade/
-├── configs/                 # Experiment and model configurations
-├── data/
-│   ├── raw/                 # Raw APTOS images (not committed)
-│   ├── processed/           # Preprocessed/cached data (not committed)
-│   └── splits/              # Train/validation/test CSV splits
-├── notebooks/
-│   └── EDA_APTOS_Research.ipynb   # Publication-quality EDA with inline visualizations
+├── configs/                 # Data, model, and training configuration
+├── data/                    # Local raw/processed data and split manifests
+├── deployment/              # Optional FastAPI inference service
+├── docs/                    # Design, deployment, and milestone notes
+├── frontend/                # React, TypeScript, ONNX Runtime Web application
+├── presentation_assets/     # Metrics, charts, EDA, and reporting sources
+├── scripts/                 # Prepare, train, evaluate, predict, and export
 ├── src/
-│   ├── data/                # datasets, preprocessing/, augmentation, audit, splits
-│   ├── models/              # config.py, registry.py, backbones/, semantic_prior/, attention/, neck/, heads/, dual_head.py, dual_swinord.py
-│   ├── losses/              # base.py, classification_loss.py, ordinal_loss.py, carm_loss.py, total_loss.py
-│   ├── training/            # config.py, optim.py, scheduler.py, amp.py, checkpoint.py, manifest.py, csv_logger.py, tensorboard_logger.py, callbacks.py, trainer.py
-│   ├── evaluation/          # metrics.py, calibration.py, evaluator.py, confusion_matrix.py
-│   ├── visualization/       # gradcam.py, shap_analysis.py
-│   └── utils/               # seed.py, logger.py, helpers.py
-├── scripts/
-│   ├── train.py
-│   ├── evaluate.py
-│   └── predict.py
-├── deployment/              # Single-image inference utilities
-├── frontend/                # React + TypeScript deployment interface
-├── Presentation/            # Curated final presentation deliverables
-├── presentation_assets/     # Source archive used to build the presentation
-├── outputs/                 # Experiment outputs and reports (not committed)
-├── checkpoints/             # Saved model weights (not committed)
-├── logs/                    # Training logs (not committed)
-├── docs/                    # Documentation and literature
-├── tests/                   # Unit tests
-├── README.md
-├── requirements.txt
-├── environment.yml
-└── pyproject.toml
+│   ├── data/                # Dataset, preprocessing, augmentation, and audit
+│   ├── evaluation/          # Metrics, calibration, and confusion matrix
+│   ├── losses/              # Classification, ordinal, CARM, and total loss
+│   ├── models/              # Dual-SwinOrd architecture and components
+│   ├── training/            # Trainer, callbacks, checkpoints, and logging
+│   └── visualization/       # Grad-CAM and SHAP utilities
+├── tests/                   # Unit and integration tests
+└── .github/workflows/       # CI and automatic public deployment
 ```
 
-## Milestones
+## Quick Start
 
-- [x] Repository scaffold and project organization
-- [x] Exploratory Data Analysis (`notebooks/EDA_APTOS_Research.ipynb`)
-- [x] Data ingestion, preprocessing, and train/val/test split creation
-- [x] Swin Transformer backbone with SPM and PLKA
-- [x] Dual-head (classification + ordinal) architecture
-- [x] Classification, ordinal, and combined training losses (Eq. 7-9; see `docs/milestone_04_paper_gaps.md`)
-- [x] Training loop and per-epoch validation (`src/training/trainer.py`); hyperparameter search is not implemented -- the paper reports one fixed hyperparameter set (`configs/training.yaml`), not a search
-- [x] Final locked-test evaluation and calibration
-- [x] Browser class-activation explanation and research guidance
-- [x] Downloadable clinician and patient PDF reports
-- [x] Tested GitHub Actions deployment to the public Hugging Face Space
+### Public demo
 
-## Final test results
+Open the **[direct static application](https://mohamed00212-retinagrade.static.hf.space/)**.
+No installation, account, server, or paid GPU is required.
 
-The validation-selected `best.pt` checkpoint was evaluated once on the locked
-test split (342 images):
-
-| Metric | Test result |
-|---|---:|
-| Accuracy | 86.84% |
-| Quadratic Weighted Kappa (QWK) | 0.9074 |
-| Macro F1 | 67.83% |
-| Mean Absolute Error (MAE) | 0.1784 |
-| Within-one-grade accuracy | 96.20% |
-| Referable DR AUC | 98.18% |
-| Referable DR false-negative rate | 3.42% |
-
-The checkpoint was selected at epoch 24 using validation QWK (`0.9177`). The
-test split was used only for final evaluation and did not influence checkpoint
-selection.
-
-## Environment setup
-
-### Conda (recommended)
-
-```powershell
-conda env create -f environment.yml
-conda activate dual-swinord
-```
-
-### venv
-
-**Windows PowerShell:**
-```powershell
-python -m venv .venv-gpu
-.venv-gpu\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -e ".[dev]"
-```
-
-**Linux/macOS:**
-```bash
-python -m venv .venv-gpu
-source .venv-gpu/bin/activate
-python -m pip install --upgrade pip
-pip install -e ".[dev]"
-```
-
-### Verify installation
-
-Run the test suite to confirm the package and dependencies are installed correctly:
+### Frontend development
 
 ```bash
+git clone https://github.com/Mohamedtarek00212/RetinaGrade.git
+cd RetinaGrade/frontend
+npm ci
+npm run dev
+```
+
+The ONNX model is stored with Git LFS. Ensure Git LFS is installed before
+cloning, or run `git lfs pull` before building the frontend.
+
+### Python environment
+
+Python 3.10-3.12 is supported.
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -e ".[dev,deployment]"
 pytest
 ```
 
-`scripts/train.py`, `scripts/prepare_data.py`, `scripts/evaluate.py`, and
-`scripts/predict.py` are implemented. The browser application also returns a
-class-specific activation map with confidence context and conservative research
-guidance. The map shows spatial contribution to the selected class; it is not a
-lesion detector or a clinical explanation.
+For ONNX export, install the additional dependencies:
 
-After clinician review, the browser can generate two local PDF documents: a
-detailed clinician review report and a plain-language patient information
-summary. Patient data remains in memory inside the browser and is not uploaded.
-
-The FastAPI backend and React research interface are documented in
-`deployment/README.md` and `frontend/README.md`.
-
-Free browser-based ONNX deployment, plus optional CPU and NVIDIA GPU containers,
-is documented in `docs/deployment.md`.
+```bash
+pip install -e ".[onnx]"
+python scripts/export_onnx.py
+```
 
 ### Single-image prediction
-
-After downloading `best.pt` as described below, export an inference-only copy:
 
 ```bash
 python scripts/export_inference_checkpoint.py
@@ -151,53 +200,58 @@ python scripts/predict.py path/to/fundus.png \
   --checkpoint outputs/checkpoints/deployment/model_inference.pt
 ```
 
-The command prints the predicted grade, class name, confidence, class
-probabilities, and ordinal-threshold probabilities as JSON.
+The command returns the grade, class label, confidence, class probabilities,
+and ordinal-threshold probabilities as JSON.
 
-## Data setup
+## Data and Checkpoints
 
-Place the APTOS 2019 images under `data/raw/`:
+Place APTOS 2019 images under `data/raw/train`, `data/raw/val`, and
+`data/raw/test`. Split CSV files belong in `data/splits` as `train.csv`,
+`valid.csv`, and `test.csv`. Raw images and split files are intentionally not
+committed.
 
-```text
-data/raw/
-├── train/
-│   └── <id_code>.png
-├── val/
-│   └── <id_code>.png
-└── test/
-    └── <id_code>.png
-```
-
-Split CSVs belong in `data/splits/` as `train.csv`, `valid.csv`, and `test.csv`.
-The expected columns follow the candidates in `configs/data.yaml` (for example `id_code` and `diagnosis`).
-
-Raw images and CSVs are **not** committed to Git (see `.gitignore`).
-
-## Model checkpoint
-
-The deployment checkpoint is `outputs/checkpoints/training/best.pt`. It is not
-stored in Git because it is approximately 523 MB. Download it from the
-[v0.1.0 model release](https://github.com/Mohamedtarek00212/RetinaGrade/releases/download/v0.1.0/best.pt)
-and place it at the same path after cloning the repository.
-
-Checkpoint integrity:
+The full training checkpoint is tracked with Git LFS at
+`outputs/checkpoints/training/best.pt` and is also available from the
+[v0.1.0 release](https://github.com/Mohamedtarek00212/RetinaGrade/releases/download/v0.1.0/best.pt).
 
 ```text
 SHA256: 5B979123FDA8179F6DFD59AD45EA0E7CE3D8B6B6DF47CFBA39776528779DF389
 ```
 
-`best.pt` contains the model, optimizer, and scheduler states so training can be
-resumed. `scripts/export_inference_checkpoint.py` removes the training-only state
-and writes `outputs/checkpoints/deployment/model_inference.pt` for deployment.
+The browser artifact uses quantized weights and is stored at
+`frontend/public/models/retinagrade.int8.onnx`. A 15-image, grade-balanced
+compatibility check retained all top-1 predictions with a maximum class
+probability change of 0.0169. This compatibility check does not replace the
+full validation or locked-test evaluation.
 
-## Git and large-file notes
+## Deployment
 
-- `notebooks/EDA_APTOS_Research.ipynb` is ~22 MB because it stores inline visualizations. GitHub allows files up to 100 MB, but pushes and clones of this repository will be noticeably slower because of that notebook.
-- `docs/literature/*.pdf` is intentionally ignored by `.gitignore`; keep the paper locally or reference its DOI/URL in `docs/milestone_02.md`.
-- Data and generated artifacts (`data/raw/`, `data/processed/`, `outputs/`, `checkpoints/`, `logs/`) are not committed; only `.gitkeep` files are pushed so the directory structure is preserved when the project is cloned.
+Every push to `main` follows the same release gate:
 
-## Reproducibility and safety notes
+1. Run the Python test suite.
+2. Install, lint, and build the frontend with the real Git LFS model.
+3. Validate the generated static bundle.
+4. Upload the tested `frontend/dist` artifact to Hugging Face Spaces.
+5. Confirm that the direct public URL serves the new hashed JavaScript asset.
 
-- Only algorithms, preprocessing, augmentations, and architectural details explicitly described in the Dual-SwinOrd paper are allowed.
-- All other changes are limited to software engineering: organization, readability, maintainability, logging, configuration, and documentation.
-- This code is for research and education only and is not a medical device. It must not be used for diagnosis, triage, or treatment.
+The browser application is the recommended free deployment. Optional CPU and
+NVIDIA GPU containers remain available for centralized FastAPI inference. See
+[`docs/deployment.md`](docs/deployment.md) for both paths.
+
+## Reproducibility and Limitations
+
+- Algorithmic decisions follow the described Dual-SwinOrd reproduction; code
+  organization and deployment changes are treated as engineering work.
+- The locked test set was evaluated once after validation-based checkpoint
+  selection.
+- The activation map describes spatial contribution to the selected class. It
+  does not identify lesions or establish a diagnosis.
+- Confidence describes model preference, not guaranteed correctness.
+- Browser WebGPU support varies; WebAssembly CPU execution is the supported
+  compatibility path.
+- Clinical validation, prospective testing, regulatory review, and deployment
+  monitoring are outside the scope of this research project.
+
+## License
+
+Released under the [MIT License](LICENSE).
